@@ -1,0 +1,152 @@
+# Detekt configuration for sdui-kmp.
+#
+# Used with `buildUponDefaultConfig = true`, so this file only contains
+# overrides on top of detekt's built-in defaults. See:
+#   https://detekt.dev/docs/introduction/configurations
+#
+# Project-specific rationale lives next to each override.
+
+build:
+  maxIssues: 0
+  excludeCorrectable: false
+
+config:
+  validation: true
+  warningsAsErrors: false
+  # Allow our custom keys (test-file overrides for line length live under formatting).
+  excludes: ''
+
+processors:
+  active: true
+
+console-reports:
+  active: true
+
+complexity:
+  active: true
+  # Data classes that mirror the protocol carry every field — long parameter
+  # lists are inherent and a long-list lint adds no signal.
+  LongParameterList:
+    active: false
+  # Heuristic adds noise on protocol nodes; keep complexity checks via other rules.
+  TooManyFunctions:
+    active: false
+
+exceptions:
+  active: true
+  # We intentionally catch Throwable at transport / renderer boundaries to keep
+  # the client from crashing on unknown nodes (see VISION.md non-negotiable #3).
+  TooGenericExceptionCaught:
+    active: false
+  TooGenericExceptionThrown:
+    active: false
+
+style:
+  active: true
+  # Schema versions, design tokens, and snapshot fixtures are full of "magic"
+  # numbers that are intentionally literal — disabling project-wide.
+  MagicNumber:
+    active: false
+  MaxLineLength:
+    active: true
+    maxLineLength: 140
+    excludePackageStatements: true
+    excludeImportStatements: true
+    excludeCommentStatements: false
+    # Keep the rule informational on tests where long given/when/then strings
+    # and fixture literals naturally exceed the limit.
+    excludes:
+      - '**/test/**'
+      - '**/*Test.kt'
+      - '**/*Tests.kt'
+      - '**/commonTest/**'
+      - '**/jvmTest/**'
+      - '**/androidTest/**'
+      - '**/iosTest/**'
+  # Top-level functions in tooling-cli main entry points are fine.
+  WildcardImport:
+    active: true
+    excludeImports:
+      - 'java.util.*'
+  ReturnCount:
+    active: true
+    max: 4
+  UnusedPrivateMember:
+    active: true
+  ForbiddenComment:
+    active: false
+
+naming:
+  active: true
+  FunctionNaming:
+    active: true
+    functionPattern: '[a-z][a-zA-Z0-9]*'
+    excludes:
+      # Test convention: behavior_under_condition() — underscores required.
+      - '**/test/**'
+      - '**/*Test.kt'
+      - '**/*Tests.kt'
+      - '**/commonTest/**'
+      - '**/jvmTest/**'
+      - '**/androidTest/**'
+      - '**/iosTest/**'
+  # Compose @Composable functions are PascalCase; keep this active for normal
+  # functions but allow the Compose pattern.
+  TopLevelPropertyNaming:
+    active: true
+    constantPattern: '[A-Z][_A-Z0-9]*'
+    propertyPattern: '[A-Za-z][_A-Za-z0-9]*'
+    privatePropertyPattern: '_?[A-Za-z][_A-Za-z0-9]*'
+
+formatting:
+  active: true
+  android: false
+  autoCorrect: false
+  MaximumLineLength:
+    active: true
+    maxLineLength: 140
+    ignoreBackTickedIdentifier: false
+  ArgumentListWrapping:
+    active: true
+    maxLineLength: 140
+  ParameterListWrapping:
+    active: true
+    maxLineLength: 140
+  Wrapping:
+    active: true
+  # ktlint's filename rule is overly strict for sealed-hierarchy files where
+  # the primary type is one of many nested data classes.
+  Filename:
+    active: false
+  # Wildcard imports already handled by style.WildcardImport.
+  NoWildcardImports:
+    active: true
+  # Trailing commas conflict with our existing style; align with .editorconfig.
+  TrailingCommaOnCallSite:
+    active: false
+  TrailingCommaOnDeclarationSite:
+    active: false
+
+potential-bugs:
+  active: true
+
+performance:
+  active: true
+
+coroutines:
+  active: true
+
+empty-blocks:
+  active: true
+
+comments:
+  active: true
+  # KDoc is required by CONVENTIONS.md for explicit API; rely on Kotlin's own
+  # explicit-API check rather than detekt's per-rule heuristic so we don't
+  # duplicate work.
+  UndocumentedPublicClass:
+    active: false
+  UndocumentedPublicFunction:
+    active: false
+  UndocumentedPublicProperty:
+    active: false

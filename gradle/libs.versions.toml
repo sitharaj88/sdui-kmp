@@ -1,0 +1,163 @@
+[versions]
+kotlin = "2.1.0"
+composeMultiplatform = "1.7.3"
+agp = "8.7.3"
+androidCompileSdk = "35"
+androidMinSdk = "24"
+androidTargetSdk = "35"
+kotlinxSerialization = "1.7.3"
+kotlinxCoroutines = "1.9.0"
+kotlinxCollectionsImmutable = "0.3.8"
+ktor = "3.0.2"
+androidxActivity = "1.9.3"
+androidxCore = "1.15.0"
+logback = "1.5.12"
+dokka = "1.9.20"
+detekt = "1.23.7"
+coil = "3.2.0"
+kotlinxBrowser = "0.3"
+opentelemetry = "1.45.0"
+# Sentry JVM SDK 7.x line — `IHub` API surface used by `:tooling-telemetry-sentry`.
+# 8.x renames `IHub`/`Sentry.getCurrentHub()` to `IScopes`/`Sentry.getCurrentScopes()`;
+# we pin 7.x so adopters on the LTS Sentry SDK do not have to migrate to upgrade
+# `:tooling-telemetry-sentry`.
+sentry = "7.22.6"
+# Micrometer Prometheus registry — used by `:samples:sample-server` and
+# `:studio-server` to expose `/metrics` for Prometheus scrapes.
+micrometerPrometheus = "1.13.10"
+exposed = "0.61.0"
+postgresql = "42.7.4"
+hikari = "6.0.0"
+h2 = "2.3.232"
+logbackContrib = "0.1.5"
+jackson = "2.18.2"
+auth0Jwt = "4.4.0"
+bcrypt = "0.10.2"
+gradleNexusPublish = "2.0.0"
+kover = "0.9.1"
+kotest = "5.9.1"
+androidxTestExtJunit = "1.2.1"
+androidxTestEspressoCore = "3.6.1"
+androidxComposeUiTestJunit4 = "1.7.6"
+
+# Google Maps Compose 8.x (Apr 2026 stable line) and the Maps SDK for Android 18.x — the
+# native-map widget module's Android backend. Versions are pinned independently of Compose
+# Multiplatform because Maps Compose tracks its own release cadence.
+mapsCompose = "6.6.0"
+playServicesMaps = "18.1.0"
+
+[libraries]
+kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinxSerialization" }
+kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinxCoroutines" }
+kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinxCoroutines" }
+kotlinx-collections-immutable = { module = "org.jetbrains.kotlinx:kotlinx-collections-immutable", version.ref = "kotlinxCollectionsImmutable" }
+kotlinx-browser = { module = "org.jetbrains.kotlinx:kotlinx-browser", version.ref = "kotlinxBrowser" }
+
+ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }
+ktor-client-websockets = { module = "io.ktor:ktor-client-websockets", version.ref = "ktor" }
+ktor-server-websockets = { module = "io.ktor:ktor-server-websockets", version.ref = "ktor" }
+ktor-client-cio = { module = "io.ktor:ktor-client-cio", version.ref = "ktor" }
+ktor-client-okhttp = { module = "io.ktor:ktor-client-okhttp", version.ref = "ktor" }
+ktor-client-darwin = { module = "io.ktor:ktor-client-darwin", version.ref = "ktor" }
+ktor-client-java = { module = "io.ktor:ktor-client-java", version.ref = "ktor" }
+ktor-client-js = { module = "io.ktor:ktor-client-js", version.ref = "ktor" }
+ktor-client-content-negotiation = { module = "io.ktor:ktor-client-content-negotiation", version.ref = "ktor" }
+ktor-serialization-kotlinx-json = { module = "io.ktor:ktor-serialization-kotlinx-json", version.ref = "ktor" }
+ktor-server-core = { module = "io.ktor:ktor-server-core", version.ref = "ktor" }
+ktor-server-netty = { module = "io.ktor:ktor-server-netty", version.ref = "ktor" }
+ktor-server-content-negotiation = { module = "io.ktor:ktor-server-content-negotiation", version.ref = "ktor" }
+ktor-server-cors = { module = "io.ktor:ktor-server-cors", version.ref = "ktor" }
+ktor-client-auth = { module = "io.ktor:ktor-client-auth", version.ref = "ktor" }
+ktor-client-mock = { module = "io.ktor:ktor-client-mock", version.ref = "ktor" }
+ktor-server-auth = { module = "io.ktor:ktor-server-auth", version.ref = "ktor" }
+ktor-server-auth-jwt = { module = "io.ktor:ktor-server-auth-jwt", version.ref = "ktor" }
+ktor-server-test-host = { module = "io.ktor:ktor-server-test-host", version.ref = "ktor" }
+
+androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "androidxActivity" }
+androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "androidxCore" }
+
+logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
+
+# Plugin artifacts used by convention plugins
+gradle-plugin-kotlin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
+gradle-plugin-kotlin-serialization = { module = "org.jetbrains.kotlin:kotlin-serialization", version.ref = "kotlin" }
+gradle-plugin-kotlin-compose-compiler = { module = "org.jetbrains.kotlin:compose-compiler-gradle-plugin", version.ref = "kotlin" }
+gradle-plugin-compose = { module = "org.jetbrains.compose:compose-gradle-plugin", version.ref = "composeMultiplatform" }
+gradle-plugin-android = { module = "com.android.tools.build:gradle", version.ref = "agp" }
+gradle-plugin-detekt = { module = "io.gitlab.arturbosch.detekt:detekt-gradle-plugin", version.ref = "detekt" }
+gradle-plugin-dokka = { module = "org.jetbrains.dokka:dokka-gradle-plugin", version.ref = "dokka" }
+gradle-plugin-kover = { module = "org.jetbrains.kotlinx:kover-gradle-plugin", version.ref = "kover" }
+
+# Coil 3 multiplatform image loader (used by :widgets-media-coil — opt-in real loader)
+coil-compose = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coil" }
+coil-network-ktor3 = { module = "io.coil-kt.coil3:coil-network-ktor3", version.ref = "coil" }
+
+# OpenTelemetry — JVM-only adapter in :tooling-telemetry-otel.
+opentelemetry-api = { module = "io.opentelemetry:opentelemetry-api", version.ref = "opentelemetry" }
+opentelemetry-sdk = { module = "io.opentelemetry:opentelemetry-sdk", version.ref = "opentelemetry" }
+opentelemetry-sdk-testing = { module = "io.opentelemetry:opentelemetry-sdk-testing", version.ref = "opentelemetry" }
+
+# Sentry JVM SDK — JVM-only `:tooling-telemetry-sentry` adapter dependency.
+sentry = { module = "io.sentry:sentry", version.ref = "sentry" }
+
+# Micrometer Prometheus registry — exposes Prometheus text format from
+# `/metrics` on `:samples:sample-server` and `:studio-server`. Pulled in
+# alongside `ktor-server-metrics-micrometer` (which exposes the JVM /
+# request metric collection).
+micrometer-registry-prometheus = { module = "io.micrometer:micrometer-registry-prometheus", version.ref = "micrometerPrometheus" }
+ktor-server-metrics-micrometer = { module = "io.ktor:ktor-server-metrics-micrometer", version.ref = "ktor" }
+# StatusPages plugin — maps store-layer / framework exceptions to a uniform ErrorResponse
+# JSON contract on `:studio-server` (see StudioStatusPages.kt) instead of leaking bare 500s.
+ktor-server-status-pages = { module = "io.ktor:ktor-server-status-pages", version.ref = "ktor" }
+
+# Persistence stack for the production sample-server (Postgres in Docker, H2 fallback for dev).
+exposed-core = { module = "org.jetbrains.exposed:exposed-core", version.ref = "exposed" }
+exposed-jdbc = { module = "org.jetbrains.exposed:exposed-jdbc", version.ref = "exposed" }
+exposed-java-time = { module = "org.jetbrains.exposed:exposed-java-time", version.ref = "exposed" }
+postgresql = { module = "org.postgresql:postgresql", version.ref = "postgresql" }
+hikari-cp = { module = "com.zaxxer:HikariCP", version.ref = "hikari" }
+h2 = { module = "com.h2database:h2", version.ref = "h2" }
+kotlinx-coroutines-slf4j = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-slf4j", version.ref = "kotlinxCoroutines" }
+logback-jackson = { module = "ch.qos.logback.contrib:logback-jackson", version.ref = "logbackContrib" }
+logback-json-classic = { module = "ch.qos.logback.contrib:logback-json-classic", version.ref = "logbackContrib" }
+jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind", version.ref = "jackson" }
+
+# Auth0 java-jwt — RS256 issuance/verification for `:auth-rs256`. Already pulled in transitively
+# via `ktor-server-auth-jwt`, but `:auth-rs256` declares it explicitly so it doesn't depend on
+# Ktor's transitive graph for its core algorithm support.
+auth0-java-jwt = { module = "com.auth0:java-jwt", version.ref = "auth0Jwt" }
+
+# Bcrypt — pure-Java password hashing used by `:studio-server` to hash editor passwords.
+bcrypt = { module = "at.favre.lib:bcrypt", version.ref = "bcrypt" }
+
+# kotest-property — generator-based property tests. We deliberately do NOT pull in
+# kotest-runner / kotest-junit; the repo uses plain kotlin.test, and `forAll { ... }`
+# blocks are invoked from inside `@Test` functions. See ADR-0014.
+kotest-property = { module = "io.kotest:kotest-property", version.ref = "kotest" }
+
+# AndroidX test scaffolding for the sample-android instrumentation harness. Compile-only
+# in CI today (./gradlew :samples:sample-android:assembleDebugAndroidTest); no emulator
+# job runs the tests yet — see .github/workflows/ci.yml comments.
+androidx-test-ext-junit = { module = "androidx.test.ext:junit", version.ref = "androidxTestExtJunit" }
+androidx-test-espresso-core = { module = "androidx.test.espresso:espresso-core", version.ref = "androidxTestEspressoCore" }
+androidx-compose-ui-test-junit4 = { module = "androidx.compose.ui:ui-test-junit4-android", version.ref = "androidxComposeUiTestJunit4" }
+androidx-compose-ui-test-manifest = { module = "androidx.compose.ui:ui-test-manifest", version.ref = "androidxComposeUiTestJunit4" }
+
+# Google Maps Compose for Android — the actual implementation backing the `sdui.map` native
+# surface factory on Android. Pulls in `com.google.maps.android:maps-compose` (Composables)
+# and the underlying Maps SDK for Android (`play-services-maps`).
+maps-compose = { module = "com.google.maps.android:maps-compose", version.ref = "mapsCompose" }
+play-services-maps = { module = "com.google.android.gms:play-services-maps", version.ref = "playServicesMaps" }
+
+[plugins]
+kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
+kotlinJvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+kotlinAndroid = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+kotlinSerialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+kotlinComposeCompiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+composeMultiplatform = { id = "org.jetbrains.compose", version.ref = "composeMultiplatform" }
+androidApplication = { id = "com.android.application", version.ref = "agp" }
+androidLibrary = { id = "com.android.library", version.ref = "agp" }
+dokka = { id = "org.jetbrains.dokka", version.ref = "dokka" }
+gradleNexusPublish = { id = "io.github.gradle-nexus.publish-plugin", version.ref = "gradleNexusPublish" }
+kover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }

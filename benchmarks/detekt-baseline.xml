@@ -1,0 +1,8 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>ImportOrdering:Main.kt$import dev.sdui.kmp.protocol.Action import dev.sdui.kmp.protocol.Column import dev.sdui.kmp.protocol.Destination import dev.sdui.kmp.protocol.NodeId import dev.sdui.kmp.protocol.PatchOp import dev.sdui.kmp.protocol.Predicate import dev.sdui.kmp.protocol.Screen import dev.sdui.kmp.protocol.SchemaVersion import dev.sdui.kmp.protocol.ScreenId import dev.sdui.kmp.protocol.SduiJson import dev.sdui.kmp.protocol.StatePath import dev.sdui.kmp.protocol.Text import dev.sdui.kmp.protocol.TreePatch import dev.sdui.kmp.protocol.UiNode import dev.sdui.kmp.protocol.Value import dev.sdui.kmp.runtime.StateStore import dev.sdui.kmp.runtime.apply import dev.sdui.kmp.runtime.evaluate import dev.sdui.kmp.runtime.resolve import kotlinx.serialization.json.JsonPrimitive</ID>
+    <ID>MatchingDeclarationName:MicroBench.kt$BenchResult</ID>
+  </CurrentIssues>
+</SmellBaseline>

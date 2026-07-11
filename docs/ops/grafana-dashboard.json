@@ -1,0 +1,155 @@
+{
+  "__inputs": [
+    {
+      "name": "DS_PROMETHEUS",
+      "label": "Prometheus",
+      "description": "Prometheus instance scraping the sdui-kmp servers",
+      "type": "datasource",
+      "pluginId": "prometheus",
+      "pluginName": "Prometheus"
+    }
+  ],
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": "-- Grafana --",
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "description": "Starter dashboard for sdui-kmp servers (sample-server + studio-server). Imports against the metric names exposed by the Ktor MicrometerMetrics plugin and the JVM / system binders wired in MetricsModule.kt. See docs/ops/slos.md for the SLO catalogue this dashboard surfaces.",
+  "editable": true,
+  "graphTooltip": 1,
+  "panels": [
+    {
+      "title": "Screen GET p99 latency (sample-server)",
+      "type": "timeseries",
+      "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
+      "fieldConfig": {"defaults": {"unit": "s", "decimals": 3}},
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.99, sum(rate(ktor_http_server_requests_seconds_bucket{application=\"sample-server\", route=~\"/screens/.*\"}[5m])) by (le, route))",
+          "legendFormat": "{{route}} p99",
+          "refId": "A"
+        }
+      ],
+      "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "red", "value": 0.2}]},
+      "description": "SLO S1: p99 < 200 ms over 30 days. Threshold line drawn at 200 ms."
+    },
+    {
+      "title": "Screen GET 5xx error rate (sample-server)",
+      "type": "timeseries",
+      "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
+      "fieldConfig": {"defaults": {"unit": "percentunit", "decimals": 4}},
+      "targets": [
+        {
+          "expr": "sum(rate(ktor_http_server_requests_seconds_count{application=\"sample-server\", route=~\"/screens/.*\", status=~\"5..\"}[5m])) / clamp_min(sum(rate(ktor_http_server_requests_seconds_count{application=\"sample-server\", route=~\"/screens/.*\"}[5m])), 0.001)",
+          "legendFormat": "5xx fraction",
+          "refId": "A"
+        }
+      ],
+      "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "red", "value": 0.001}]},
+      "description": "SLO S2: < 0.1% over 7 days. Threshold line drawn at 0.001."
+    },
+    {
+      "title": "Auth login p95 latency (sample-server)",
+      "type": "timeseries",
+      "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8},
+      "fieldConfig": {"defaults": {"unit": "s"}},
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(ktor_http_server_requests_seconds_bucket{application=\"sample-server\", route=\"/auth/login\"}[5m])) by (le))",
+          "legendFormat": "p95",
+          "refId": "A"
+        }
+      ],
+      "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "red", "value": 0.4}]}
+    },
+    {
+      "title": "Active live-screen WebSocket connections",
+      "type": "timeseries",
+      "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8},
+      "targets": [
+        {
+          "expr": "sum(ktor_websocket_active_connections) by (application)",
+          "legendFormat": "{{application}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "title": "JVM heap used",
+      "type": "timeseries",
+      "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 16},
+      "fieldConfig": {"defaults": {"unit": "bytes"}},
+      "targets": [
+        {
+          "expr": "sum(jvm_memory_used_bytes{area=\"heap\"}) by (application)",
+          "legendFormat": "{{application}} heap used",
+          "refId": "A"
+        },
+        {
+          "expr": "sum(jvm_memory_max_bytes{area=\"heap\"}) by (application)",
+          "legendFormat": "{{application}} heap max",
+          "refId": "B"
+        }
+      ]
+    },
+    {
+      "title": "JVM GC pause time",
+      "type": "timeseries",
+      "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 16},
+      "fieldConfig": {"defaults": {"unit": "s"}},
+      "targets": [
+        {
+          "expr": "sum(rate(jvm_gc_pause_seconds_sum[5m])) by (application, action, cause)",
+          "legendFormat": "{{application}} {{cause}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "title": "Request rate by status (both services)",
+      "type": "timeseries",
+      "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
+      "gridPos": {"h": 8, "w": 24, "x": 0, "y": 24},
+      "targets": [
+        {
+          "expr": "sum(rate(ktor_http_server_requests_seconds_count[5m])) by (application, status)",
+          "legendFormat": "{{application}} status={{status}}",
+          "refId": "A"
+        }
+      ]
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 38,
+  "tags": ["sdui-kmp", "starter"],
+  "templating": {
+    "list": [
+      {
+        "name": "DS_PROMETHEUS",
+        "label": "Prometheus",
+        "type": "datasource",
+        "query": "prometheus",
+        "current": {}
+      }
+    ]
+  },
+  "time": {"from": "now-1h", "to": "now"},
+  "timezone": "browser",
+  "title": "sdui-kmp servers — overview",
+  "uid": "sdui-kmp-overview-starter",
+  "version": 1
+}

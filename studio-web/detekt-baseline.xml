@@ -1,0 +1,26 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>FunctionNaming:App.kt$@Composable public fun App(authState: AuthState, api: StudioApi)</ID>
+    <ID>FunctionNaming:AuditView.kt$@Composable @Suppress(&quot;LongMethod&quot;) public fun AuditView(api: StudioApi)</ID>
+    <ID>FunctionNaming:AuditView.kt$@Composable private fun AuditRow(entry: AuditEntry)</ID>
+    <ID>FunctionNaming:AuditView.kt$@Composable private fun FiltersRow( screenId: String, onScreenIdChange: (String) -> Unit, editorId: String, onEditorIdChange: (String) -> Unit, fromDate: String, onFromDateChange: (String) -> Unit, toDate: String, onToDateChange: (String) -> Unit, onApply: () -> Unit, onClear: () -> Unit, onExport: () -> Unit, entryCount: Int, )</ID>
+    <ID>FunctionNaming:LoginScreen.kt$@Composable public fun LoginScreen(api: StudioApi, authState: AuthState)</ID>
+    <ID>FunctionNaming:MainShell.kt$@Composable private fun ScreensTabContent( api: StudioApi, authState: AuthState, selectedScreenId: String?, onSelectScreen: (String) -> Unit, onClearSelection: () -> Unit, draftsOnly: Boolean, )</ID>
+    <ID>FunctionNaming:MainShell.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable @Suppress(&quot;LongMethod&quot;) public fun MainShell(api: StudioApi, authState: AuthState)</ID>
+    <ID>FunctionNaming:ScreenDetailView.kt$@Composable @Suppress(&quot;LongMethod&quot;) private fun EditorTab( api: StudioApi, screenId: String, refreshKey: Int, onPublishedOrReverted: () -> Unit, )</ID>
+    <ID>FunctionNaming:ScreenDetailView.kt$@Composable @Suppress(&quot;LongMethod&quot;, &quot;CyclomaticComplexMethod&quot;) private fun HistoryTab( api: StudioApi, authState: AuthState, screenId: String, refreshKey: Int, onReverted: () -> Unit, )</ID>
+    <ID>FunctionNaming:ScreenDetailView.kt$@Composable private fun JsonEditorPane( text: String, onTextChange: (String) -> Unit, decodeError: String?, modifier: Modifier = Modifier, )</ID>
+    <ID>FunctionNaming:ScreenDetailView.kt$@Composable private fun PreviewPane( screen: Screen?, hasDecodeError: Boolean, modifier: Modifier = Modifier, )</ID>
+    <ID>FunctionNaming:ScreenDetailView.kt$@Composable private fun RenderScreen(screen: Screen, registry: WidgetRegistry)</ID>
+    <ID>FunctionNaming:ScreenDetailView.kt$@Composable private fun StatusStrip( saveStatus: SaveStatus, publishStatus: PublishStatus, unsaved: Boolean, decodeError: String?, )</ID>
+    <ID>FunctionNaming:ScreenDetailView.kt$@Composable private fun VersionRow( version: ScreenVersion, isAdmin: Boolean, onRevertClick: () -> Unit, )</ID>
+    <ID>FunctionNaming:ScreenDetailView.kt$@OptIn(FlowPreview::class) @Composable @Suppress(&quot;LongMethod&quot;, &quot;ComplexMethod&quot;) private fun EditorPanes( api: StudioApi, screenId: String, initialBody: String, initiallyHasDraft: Boolean, onPublishedOrReverted: () -> Unit, )</ID>
+    <ID>FunctionNaming:ScreenDetailView.kt$@Composable public fun ScreenDetailView( api: StudioApi, authState: AuthState, screenId: String, )</ID>
+    <ID>FunctionNaming:ScreensListView.kt$@Composable private fun ScreenSummaryCard(row: ScreenSummary, onOpen: (String) -> Unit)</ID>
+    <ID>FunctionNaming:ScreensListView.kt$@Composable public fun ScreensListView( api: StudioApi, onOpen: (String) -> Unit, draftsOnly: Boolean = false, )</ID>
+    <ID>ImportOrdering:StudioApiTest.kt$import dev.sdui.kmp.studio.web.state.AuthState import io.ktor.client.engine.mock.MockEngine import io.ktor.client.engine.mock.respond import io.ktor.client.request.HttpRequestData import io.ktor.http.HttpMethod import io.ktor.http.HttpStatusCode import io.ktor.http.headersOf import kotlin.test.Test import kotlin.test.assertEquals import kotlin.test.assertIs import kotlin.test.assertNull import kotlin.test.assertTrue import kotlinx.coroutines.test.runTest</ID>
+    <ID>LongMethod:LoginScreen.kt$@Composable public fun LoginScreen(api: StudioApi, authState: AuthState)</ID>
+  </CurrentIssues>
+</SmellBaseline>

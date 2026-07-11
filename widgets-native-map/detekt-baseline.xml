@@ -1,0 +1,8 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>FunctionNaming:MapSurfacePlaceholder.kt$@Composable public fun MapSurfacePlaceholder( surface: NativeSurface, config: MapSurfaceConfig?, modifier: Modifier = Modifier, )</ID>
+    <ID>FunctionNaming:MapSurfaceFactory.kt$MapSurfaceFactory$@Composable actual override fun Render(surface: NativeSurface, modifier: Modifier)</ID>
+  </CurrentIssues>
+</SmellBaseline>

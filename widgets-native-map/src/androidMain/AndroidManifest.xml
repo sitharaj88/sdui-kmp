@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    This module's manifest is intentionally minimal. The Google Maps API key is the host
+    app's responsibility; widgets-native-map ships a placeholder so a host that forgets to
+    override sees the cross-platform fallback (a Material 3 Card listing markers) instead
+    of a crash. Real-world wiring lives in samples/sample-android/src/main/AndroidManifest.xml.
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application>
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="REPLACE_WITH_YOUR_KEY" />
+    </application>
+</manifest>

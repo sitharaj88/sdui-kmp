@@ -1,0 +1,200 @@
+name: CI
+
+# Docs-only changes (markdown, the docs/ tree, license, gitignore, editorconfig) skip
+# the full matrix — those edits cannot affect compilation, tests, or the protocol
+# snapshot. Source / build-script / workflow / version-catalog / snapshot changes all
+# trigger the full pipeline below.
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - '**/*.md'
+      - 'docs/**'
+      - 'LICENSE'
+      - '.gitignore'
+      - '.editorconfig'
+  pull_request:
+    branches: [main]
+    paths-ignore:
+      - '**/*.md'
+      - 'docs/**'
+      - 'LICENSE'
+      - '.gitignore'
+      - '.editorconfig'
+
+# Cancel superseded runs on the same ref. For PRs, github.ref is `refs/pull/<n>/merge`,
+# so a force-push to a PR cancels the in-flight run for that PR. Pushes to other branches
+# cancel earlier pushes to the same branch.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Schema-snapshot guard. Runs first and isolated so any divergence from the
+  # committed protocol-snapshot.json fails loudly with the structured violation
+  # list emitted by :tooling-cli, before we burn matrix minutes elsewhere.
+  # ---------------------------------------------------------------------------
+  schema-snapshot:
+    name: Schema snapshot guard
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-read-only: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork }}
+
+      - name: Verify :protocol against committed snapshot
+        run: ./gradlew verifyProtocolSnapshot --stacktrace
+
+      - name: Verify committed snapshot is up to date
+        # verifyProtocolSnapshot only fails on *breaking* drift; an additive change (new node
+        # type, new enum case, new field) that was never re-captured leaves the committed
+        # protocol-snapshot.json stale and silently passes. Re-capture it here and fail if the
+        # working tree diverges, forcing every additive protocol change to ship with a
+        # regenerated baseline in the same PR.
+        run: |
+          ./gradlew captureProtocolSnapshot --stacktrace
+          git diff --exit-code -- protocol-snapshot.json \
+            || { echo "::error::protocol-snapshot.json is stale — run './gradlew captureProtocolSnapshot' and commit the result."; exit 1; }
+
+      - name: Schema linter (transitively re-verifies snapshot)
+        run: ./gradlew :tooling-cli:check --stacktrace
+
+  # ---------------------------------------------------------------------------
+  # Linux-side targets: JVM library code (incl. server), Android compile,
+  # Wasm browser tests. Wasm browser tests run karma+webpack on headless
+  # Chrome, which the Kotlin/Wasm Gradle plugin provisions automatically.
+  # ---------------------------------------------------------------------------
+  linux:
+    name: Linux — JVM, Android, Wasm
+    runs-on: ubuntu-latest
+    needs: schema-snapshot
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-read-only: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork }}
+
+      - name: Compile JVM + Android (assemble + testClasses)
+        run: ./gradlew assemble testClasses --stacktrace
+
+      - name: Run JVM tests
+        run: ./gradlew jvmTest test --stacktrace
+
+      - name: Compile Wasm test targets
+        run: ./gradlew wasmJsTestClasses --stacktrace
+
+      - name: Run Wasm browser tests (headless Chrome)
+        # CI=true makes karma pick up the headless Chrome launcher provisioned by the
+        # Kotlin/Wasm Gradle plugin. ChromeHeadless ships with the Kotlin/Wasm tooling,
+        # so no extra setup-chrome step is needed on ubuntu-latest.
+        env:
+          CI: 'true'
+        run: ./gradlew wasmJsBrowserTest --stacktrace
+
+      # Aggregated Kover XML coverage report. Wired into `check` via `coverageGate`
+      # (see root build.gradle.kts) — running it here as a separate step uploads the
+      # XML artifact for downstream tooling without forcing every PR through Codecov.
+      # Codecov upload is intentionally NOT wired here; that's a separate decision.
+      - name: Generate aggregated Kover coverage report
+        run: ./gradlew koverXmlReport --stacktrace
+
+      - name: Upload Kover coverage XML
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: kover-coverage-xml
+          path: build/reports/kover/report.xml
+          if-no-files-found: ignore
+          retention-days: 30
+
+      # Android instrumentation harness (compile-only). The instrumentation APK is built
+      # so regressions in src/androidTest/ fail at PR time; the tests themselves are
+      # NOT executed because emulator-backed lanes are too expensive for every PR.
+      # When that lane lands, swap this for a `connectedDebugAndroidTest` step on a
+      # macos-13 or large-Linux runner with an AVD provisioned via reactivecircus/android-emulator-runner.
+      - name: Build Android instrumentation harness (compile-only, not executed)
+        run: ./gradlew :samples:sample-android:assembleDebugAndroidTest --stacktrace
+
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-test-reports
+          path: |
+            **/build/reports/tests/**
+            **/build/test-results/**
+            **/build/reports/kover/**
+          if-no-files-found: ignore
+          retention-days: 7
+
+  # ---------------------------------------------------------------------------
+  # macOS-side targets: iOS (Apple Silicon simulator + x64 simulator) and the
+  # Compose Desktop bits. macos-14 is Apple Silicon and ships with full Xcode,
+  # which Kotlin/Native iOS targets need to link the test executables.
+  # We *compile* iOS test executables (linkDebugTest*) but do not boot a
+  # simulator here — that's deferred to a future on-device job.
+  # ---------------------------------------------------------------------------
+  macos:
+    name: macOS — iOS, Desktop
+    runs-on: macos-14
+    needs: schema-snapshot
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-read-only: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork }}
+
+      - name: Show Xcode version
+        run: xcodebuild -version
+
+      - name: Compile iOS simulator test classes (Apple Silicon + x64)
+        run: ./gradlew iosSimulatorArm64TestClasses iosX64TestClasses --stacktrace
+
+      - name: Link iOS simulator test executables
+        # Linking exercises the full Kotlin/Native pipeline (cinterop, klib, linker)
+        # and catches the largest class of iOS-only build breaks. We don't run the
+        # tests on a booted simulator yet — that's a separate, slower job.
+        run: ./gradlew linkDebugTestIosSimulatorArm64 linkDebugTestIosX64 --stacktrace
+
+      - name: Compile Desktop (Compose JVM) test classes
+        run: ./gradlew jvmTestClasses --stacktrace
+
+      - name: Run Desktop (JVM) tests
+        run: ./gradlew jvmTest --stacktrace
+
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-test-reports
+          path: |
+            **/build/reports/tests/**
+            **/build/test-results/**
+          if-no-files-found: ignore
+          retention-days: 7

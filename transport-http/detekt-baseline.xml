@@ -1,0 +1,13 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>ImportOrdering:KtorSubmitHandler.kt$import dev.sdui.kmp.protocol.HttpMethod import dev.sdui.kmp.runtime.SubmitHandler import dev.sdui.kmp.runtime.SubmitResult import io.ktor.client.HttpClient import io.ktor.client.request.header import io.ktor.client.request.request import io.ktor.client.request.setBody import io.ktor.http.ContentType import io.ktor.http.HttpMethod as KtorHttpMethod import io.ktor.http.contentType import io.ktor.http.isSuccess import kotlinx.coroutines.CancellationException import kotlinx.serialization.json.JsonObject</ID>
+    <ID>InstanceOfCheckForException:HttpScreenSource.kt$HttpScreenSource$t is kotlinx.coroutines.CancellationException</ID>
+    <ID>InstanceOfCheckForException:KtorSubmitHandler.kt$KtorSubmitHandler$t is CancellationException</ID>
+    <ID>MultiLineIfElse:KtorSubmitHandler.kt$KtorSubmitHandler$"${baseUrl.trimEnd('/')}/${endpoint.trimStart('/')}"</ID>
+    <ID>MultiLineIfElse:KtorSubmitHandler.kt$KtorSubmitHandler$SubmitResult.Failure(statusCode = response.status.value)</ID>
+    <ID>MultiLineIfElse:KtorSubmitHandler.kt$KtorSubmitHandler$SubmitResult.Success</ID>
+    <ID>MultiLineIfElse:KtorSubmitHandler.kt$KtorSubmitHandler$endpoint</ID>
+  </CurrentIssues>
+</SmellBaseline>

@@ -1,0 +1,72 @@
+# =============================================================================
+# sdui-kmp sample-android baseline profile (hand-curated, stub)
+# =============================================================================
+#
+# Format: ART human-readable baseline profile. One class / method per line.
+# `H` = method should be precompiled to native (hot).
+# `S` = startup method (referenced during the first frame after process start).
+# `P` = post-startup method (referenced during the first 5 seconds after launch).
+#
+# Why hand-curated, not generated via macrobenchmark:
+#
+# `androidx.benchmark:benchmark-macro-junit4` and the `androidx.baselineprofile`
+# Gradle plugin both require AGP >= 8.7 *and* a Kotlin / Compose Multiplatform
+# combination that has not yet stabilised on Kotlin 2.1.0 + Compose MP 1.7.3
+# in this repo. Wiring the macrobenchmark module today produces a tangle of
+# ksp / hilt / hilt-android transitive resolution issues that are not worth
+# fighting until the next Kotlin bump.
+#
+# Until then, this file is a manual approximation: the protocol decoder hot
+# path, the SDUI runtime renderer entry points, the http transport, and the
+# core widget composables that fire on first screen render.
+#
+# Regenerate via the macrobenchmark module once the build catches up — see
+# docs/ops/baseline-profiles.md for the full procedure. The file is bundled
+# into release APKs by AGP automatically when located at
+# `src/main/baseline-prof.txt`; no Gradle wiring is required.
+
+# --- kotlinx-serialization: protocol decoder hot path ------------------------
+
+HSPLkotlinx/serialization/json/Json;-><init>()V
+HSPLkotlinx/serialization/json/Json;->decodeFromString(Lkotlinx/serialization/DeserializationStrategy;Ljava/lang/String;)Ljava/lang/Object;
+HSPLkotlinx/serialization/json/Json;->encodeToString(Lkotlinx/serialization/SerializationStrategy;Ljava/lang/Object;)Ljava/lang/String;
+HSPLkotlinx/serialization/internal/AbstractPolymorphicSerializer;->deserialize(Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+HSPLkotlinx/serialization/internal/PolymorphicSerializer;-><init>(Lkotlin/reflect/KClass;)V
+HSPLkotlinx/serialization/internal/SerializerCache;->get(Lkotlin/reflect/KClass;)Lkotlinx/serialization/KSerializer;
+
+# --- :protocol — wire format types we materialise on every screen ------------
+
+HSPLdev/sdui/kmp/protocol/SduiJson;->getDefault()Lkotlinx/serialization/json/Json;
+HSPLdev/sdui/kmp/protocol/Screen$Companion;->serializer()Lkotlinx/serialization/KSerializer;
+HSPLdev/sdui/kmp/protocol/UiNode$Companion;->serializer()Lkotlinx/serialization/KSerializer;
+HSPLdev/sdui/kmp/protocol/Action$Companion;->serializer()Lkotlinx/serialization/KSerializer;
+HSPLdev/sdui/kmp/protocol/Value$Companion;->serializer()Lkotlinx/serialization/KSerializer;
+HSPLdev/sdui/kmp/protocol/NodeId;-><init>(Ljava/lang/String;)V
+HSPLdev/sdui/kmp/protocol/StatePath;-><init>(Ljava/lang/String;)V
+HSPLdev/sdui/kmp/protocol/ScreenId;-><init>(Ljava/lang/String;)V
+HSPLdev/sdui/kmp/protocol/SchemaVersion;-><init>(I)V
+
+# --- :runtime — host + state + telemetry entry points ------------------------
+
+HSPLdev/sdui/kmp/runtime/SduiHost;->SduiHost(Ldev/sdui/kmp/protocol/Screen;Ldev/sdui/kmp/runtime/WidgetRegistry;Landroidx/compose/runtime/Composer;I)V
+HSPLdev/sdui/kmp/runtime/WidgetRegistry$Companion;->build(Lkotlin/jvm/functions/Function1;)Ldev/sdui/kmp/runtime/WidgetRegistry;
+HSPLdev/sdui/kmp/runtime/RenderNode;->RenderNode(Ldev/sdui/kmp/protocol/UiNode;Landroidx/compose/runtime/Composer;I)V
+HSPLdev/sdui/kmp/runtime/StackNavigator;-><init>(Ljava/lang/String;)V
+HSPLdev/sdui/kmp/runtime/DefaultActionDispatcher;-><init>(Ldev/sdui/kmp/runtime/StackNavigator;Ldev/sdui/kmp/runtime/SubmitHandler;Ldev/sdui/kmp/runtime/SduiTelemetry;)V
+HSPLdev/sdui/kmp/runtime/NoopTelemetry;->onScreenRendered(Ldev/sdui/kmp/protocol/ScreenId;Ldev/sdui/kmp/protocol/SchemaVersion;J)V
+
+# --- :transport-http — the screen source clients use first --------------------
+
+HSPLdev/sdui/kmp/transport/http/HttpScreenSource;-><init>(Lio/ktor/client/HttpClient;Ljava/lang/String;Ljava/lang/String;)V
+HSPLdev/sdui/kmp/transport/http/HttpScreenSource;->getScreen()Lkotlinx/coroutines/flow/Flow;
+HSPLdev/sdui/kmp/transport/http/KtorSubmitHandler;-><init>(Lio/ktor/client/HttpClient;Ljava/lang/String;)V
+
+# --- Widget composables hit on every home-screen render -----------------------
+
+HSPLdev/sdui/kmp/widgetscore/WidgetsCore;->register(Ldev/sdui/kmp/runtime/WidgetRegistry$Builder;)V
+HSPLdev/sdui/kmp/widgetsforms/WidgetsForms;->register(Ldev/sdui/kmp/runtime/WidgetRegistry$Builder;)V
+HSPLdev/sdui/kmp/widgetsmedia/WidgetsMedia;->register(Ldev/sdui/kmp/runtime/WidgetRegistry$Builder;)V
+
+# --- App entry point ---------------------------------------------------------
+
+HSPLdev/sdui/kmp/sample/android/MainActivity;->onCreate(Landroid/os/Bundle;)V

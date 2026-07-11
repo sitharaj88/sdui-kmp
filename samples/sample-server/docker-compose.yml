@@ -1,0 +1,61 @@
+# docker-compose for the sample server.
+#
+# Brings up:
+#   - `db`     : Postgres 16, with a named volume so data survives `down -v`-less restarts.
+#   - `flyway` : one-shot migration runner, applies db/migrations/V1__initial.sql.
+#   - `app`    : the sample server, depending on a healthy db.
+#
+# Build context is the repository root so the multi-module Gradle build can resolve all
+# sibling projects.
+
+services:
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: sdui
+      POSTGRES_PASSWORD: sdui
+      POSTGRES_DB: sdui_sample
+    volumes:
+      - sdui_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sdui -d sdui_sample"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    ports:
+      - "5432:5432"
+
+  flyway:
+    image: flyway/flyway:10-alpine
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./db/migrations:/flyway/sql:ro
+    command: >-
+      -url=jdbc:postgresql://db:5432/sdui_sample
+      -user=sdui
+      -password=sdui
+      -connectRetries=10
+      migrate
+
+  app:
+    build:
+      context: ../..
+      dockerfile: samples/sample-server/Dockerfile
+    depends_on:
+      db:
+        condition: service_healthy
+      flyway:
+        condition: service_completed_successfully
+    environment:
+      PORT: "8080"
+      JDBC_URL: "jdbc:postgresql://db:5432/sdui_sample"
+      JDBC_USER: "sdui"
+      JDBC_PASSWORD: "sdui"
+    ports:
+      - "8080:8080"
+
+volumes:
+  sdui_pg_data:

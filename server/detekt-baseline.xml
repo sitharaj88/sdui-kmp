@@ -1,0 +1,8 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>ImportOrdering:ScreenScope.kt$import dev.sdui.kmp.protocol.A11y import dev.sdui.kmp.protocol.Action import dev.sdui.kmp.protocol.AsyncImage import dev.sdui.kmp.protocol.Button import dev.sdui.kmp.protocol.ButtonStyle import dev.sdui.kmp.protocol.Checkbox import dev.sdui.kmp.protocol.Column import dev.sdui.kmp.protocol.ColorToken import dev.sdui.kmp.protocol.ContentScale import dev.sdui.kmp.protocol.EdgeInsets import dev.sdui.kmp.protocol.Image import dev.sdui.kmp.protocol.Keyboard import dev.sdui.kmp.protocol.LazyList import dev.sdui.kmp.protocol.ListSource import dev.sdui.kmp.protocol.NativeSurface import dev.sdui.kmp.protocol.Orientation import dev.sdui.kmp.protocol.Screen import dev.sdui.kmp.protocol.ScreenId import dev.sdui.kmp.protocol.ScreenMetadata import dev.sdui.kmp.protocol.SchemaVersion import dev.sdui.kmp.protocol.Spacing import dev.sdui.kmp.protocol.StatePath import dev.sdui.kmp.protocol.StateDeclaration import dev.sdui.kmp.protocol.Text import dev.sdui.kmp.protocol.TextField import dev.sdui.kmp.protocol.TextStyleToken import dev.sdui.kmp.protocol.UiNode import dev.sdui.kmp.protocol.Validation import dev.sdui.kmp.protocol.Value import kotlinx.serialization.json.JsonObject</ID>
+    <ID>MatchingDeclarationName:NodeIds.kt$NodeIdAllocator</ID>
+  </CurrentIssues>
+</SmellBaseline>

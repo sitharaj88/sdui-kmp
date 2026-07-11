@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>sdui-kmp Studio</title>
+    <link rel="stylesheet" href="styles.css" />
+    <style>
+      /* Inline reset so the page never flashes the OS default before styles.css loads. */
+      html, body { margin: 0; padding: 0; height: 100%; }
+      body {
+        background: #f4f5f7;
+        font-family:
+          system-ui,
+          -apple-system,
+          "Segoe UI",
+          Roboto,
+          "Helvetica Neue",
+          Arial,
+          sans-serif;
+        color: #1f2328;
+      }
+      #root { height: 100%; }
+      /* Faint splash so the user sees something before the wasm bundle boots. */
+      #boot-splash {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+        color: #6e7781;
+        pointer-events: none;
+      }
+    </style>
+    <script src="sdui-kmp-studio-web.js"></script>
+  </head>
+  <body>
+    <div id="root">
+      <div id="boot-splash">Loading sdui-kmp Studio&hellip;</div>
+    </div>
+  </body>
+</html>

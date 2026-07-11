@@ -1,0 +1,18 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>NoConsecutiveBlankLines:ExperimentStore.kt$</ID>
+    <ID>UnreachableCode:ExperimentStore.kt$ExperimentStore$id = this[Audiences.id]</ID>
+    <ID>UnreachableCode:ExperimentStore.kt$ExperimentStore$AudienceRow( id = this[Audiences.id], name = this[Audiences.name], description = this[Audiences.description], predicate = pred, createdAt = this[Audiences.createdAt], createdBy = this[Audiences.createdBy], )</ID>
+    <ID>UseAnyOrNoneInsteadOfFind:ExperimentStore.kt$ExperimentStore$ScreenDefinitions .selectAll() .where { ScreenDefinitions.screenId eq screenId } .limit(1) .firstOrNull() != null</ID>
+    <ID>UseAnyOrNoneInsteadOfFind:ExperimentStore.kt$ExperimentStore$Experiments .selectAll() .where { Experiments.id eq experimentId } .limit(1) .firstOrNull() != null</ID>
+    <ID>UseAnyOrNoneInsteadOfFind:ExperimentStore.kt$ExperimentStore$Variants .selectAll() .where { (Variants.experimentId eq experimentId) and (Variants.id eq variantId) } .limit(1) .firstOrNull() != null</ID>
+    <ID>UseAnyOrNoneInsteadOfFind:ScreenStore.kt$ScreenStore$ScreenDefinitions .selectAll() .where { ScreenDefinitions.screenId eq screenId } .limit(1) .firstOrNull() != null</ID>
+    <ID>NoConsecutiveBlankLines:ExperimentsTest.kt$</ID>
+    <ID>ArgumentListWrapping:ExperimentsTest.kt$listOf("a", "b", "c")</ID>
+    <ID>ArgumentListWrapping:ExperimentsTest.kt$listOf("control", "variantA")</ID>
+    <ID>ArgumentListWrapping:ExperimentsTest.kt$"control" to 50, "variantA" to 50</ID>
+    <ID>ArgumentListWrapping:ExperimentsTest.kt$"a" to 50, "b" to 30, "c" to 20</ID>
+  </CurrentIssues>
+</SmellBaseline>

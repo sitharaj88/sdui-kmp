@@ -1,0 +1,20 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>EmptyFunctionBlock:Navigator.kt$NoOpNavigator${}</ID>
+    <ID>EmptyFunctionBlock:SduiHost.kt$&lt;no name provided>${}</ID>
+    <ID>FunctionNaming:ItemScope.kt$@Composable public fun ItemScope( itemKey: String, initial: JsonObject, content: @Composable () -> Unit, )</ID>
+    <ID>FunctionNaming:NativeSurfaceFactory.kt$NativeSurfaceFactory$@Composable public fun Render(surface: NativeSurface, modifier: Modifier)</ID>
+    <ID>FunctionNaming:NodeRenderer.kt$NodeRenderer$@Composable public fun Render(node: T, modifier: Modifier)</ID>
+    <ID>FunctionNaming:RenderNode.kt$@Composable public fun RenderNode(node: UiNode, modifier: Modifier = Modifier)</ID>
+    <ID>FunctionNaming:SduiHost.kt$@Composable private fun ErrorPlaceholder(error: Throwable, onRetry: () -> Unit)</ID>
+    <ID>FunctionNaming:SduiHost.kt$@Composable private fun LoadingPlaceholder()</ID>
+    <ID>FunctionNaming:SduiHost.kt$@Composable private fun RenderReady( screen: Screen, registry: WidgetRegistry, navigator: Navigator, telemetry: SduiTelemetry, submitHandler: SubmitHandler?, liveSource: LiveSource?, nativeSurfaceRegistry: NativeSurfaceRegistry, )</ID>
+    <ID>FunctionNaming:SduiHost.kt$@Composable public fun SduiHost( screen: Screen, registry: WidgetRegistry, store: StateStore = remember(screen) { StateStore(screen.initialState) }, navigator: Navigator = NoOpNavigator, telemetry: SduiTelemetry = NoopTelemetry, submitHandler: SubmitHandler? = null, liveSource: LiveSource? = null, nativeSurfaceRegistry: NativeSurfaceRegistry = NativeSurfaceRegistry.Empty, )</ID>
+    <ID>FunctionNaming:SduiHost.kt$@Composable public fun SduiHost( source: ScreenSource, registry: WidgetRegistry, navigator: Navigator = NoOpNavigator, telemetry: SduiTelemetry = NoopTelemetry, submitHandler: SubmitHandler? = null, liveSource: LiveSource? = null, nativeSurfaceRegistry: NativeSurfaceRegistry = NativeSurfaceRegistry.Empty, )</ID>
+    <ID>ImportOrdering:ActionDispatcher.kt$import dev.sdui.kmp.protocol.Action import dev.sdui.kmp.protocol.OptimisticUpdate import dev.sdui.kmp.protocol.RetryPolicy import dev.sdui.kmp.protocol.StatePath import dev.sdui.kmp.protocol.Value import kotlin.time.TimeSource import kotlinx.coroutines.delay import kotlinx.serialization.json.JsonElement import kotlinx.serialization.json.JsonObject import kotlinx.serialization.json.JsonPrimitive import kotlinx.serialization.json.buildJsonObject</ID>
+    <ID>MultiLineIfElse:StateStore.kt$StateStore$derivedStateOf { parent.snapshot.value.putAll(local.value) }</ID>
+    <ID>MultiLineIfElse:StateStore.kt$StateStore$local</ID>
+  </CurrentIssues>
+</SmellBaseline>

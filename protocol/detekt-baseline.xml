@@ -1,0 +1,34 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>AnnotationOnSeparateLine:ActionPolicy.kt$RetryPolicy.Exponential$@Serializable @SerialName("exponential") public data</ID>
+    <ID>AnnotationOnSeparateLine:ActionPolicy.kt$RetryPolicy.None$@Serializable @SerialName("none") public data</ID>
+    <ID>AnnotationOnSeparateLine:DesignTokens.kt$ColorToken.Error$@Serializable @SerialName("error") public data</ID>
+    <ID>AnnotationOnSeparateLine:DesignTokens.kt$ColorToken.Muted$@Serializable @SerialName("muted") public data</ID>
+    <ID>AnnotationOnSeparateLine:DesignTokens.kt$ColorToken.OnPrimary$@Serializable @SerialName("on_primary") public data</ID>
+    <ID>AnnotationOnSeparateLine:DesignTokens.kt$ColorToken.OnSurface$@Serializable @SerialName("on_surface") public data</ID>
+    <ID>AnnotationOnSeparateLine:DesignTokens.kt$ColorToken.Primary$@Serializable @SerialName("primary") public data</ID>
+    <ID>AnnotationOnSeparateLine:DesignTokens.kt$ColorToken.Success$@Serializable @SerialName("success") public data</ID>
+    <ID>AnnotationOnSeparateLine:DesignTokens.kt$ColorToken.Surface$@Serializable @SerialName("surface") public data</ID>
+    <ID>AnnotationOnSeparateLine:DesignTokens.kt$ColorToken.Warning$@Serializable @SerialName("warning") public data</ID>
+    <ID>AnnotationOnSeparateLine:DesignTokens.kt$IconToken.Named$@Serializable @SerialName("named") public data</ID>
+    <ID>AnnotationOnSeparateLine:Validation.kt$Validation.All$@Serializable @SerialName("all") public data</ID>
+    <ID>AnnotationOnSeparateLine:Validation.kt$Validation.Email$@Serializable @SerialName("email") public data</ID>
+    <ID>AnnotationOnSeparateLine:Validation.kt$Validation.MaxLength$@Serializable @SerialName("max_length") public data</ID>
+    <ID>AnnotationOnSeparateLine:Validation.kt$Validation.MinLength$@Serializable @SerialName("min_length") public data</ID>
+    <ID>AnnotationOnSeparateLine:Validation.kt$Validation.Required$@Serializable @SerialName("required") public data</ID>
+    <ID>ImportOrdering:NodeId.kt$import kotlin.jvm.JvmInline import kotlinx.serialization.Serializable</ID>
+    <ID>ImportOrdering:SchemaVersion.kt$import kotlin.jvm.JvmInline import kotlinx.serialization.Serializable</ID>
+    <ID>ImportOrdering:ScreenId.kt$import kotlin.jvm.JvmInline import kotlinx.serialization.Serializable</ID>
+    <ID>ImportOrdering:StatePath.kt$import kotlin.jvm.JvmInline import kotlinx.serialization.Serializable</ID>
+    <ID>NoUnusedImports:SduiJson.kt$dev.sdui.kmp.protocol.SduiJson.kt</ID>
+    <ID>SpacingBetweenDeclarationsWithAnnotations:DesignTokens.kt$ColorToken$Error : ColorToken</ID>
+    <ID>SpacingBetweenDeclarationsWithAnnotations:DesignTokens.kt$ColorToken$Muted : ColorToken</ID>
+    <ID>SpacingBetweenDeclarationsWithAnnotations:DesignTokens.kt$ColorToken$OnPrimary : ColorToken</ID>
+    <ID>SpacingBetweenDeclarationsWithAnnotations:DesignTokens.kt$ColorToken$OnSurface : ColorToken</ID>
+    <ID>SpacingBetweenDeclarationsWithAnnotations:DesignTokens.kt$ColorToken$Primary : ColorToken</ID>
+    <ID>SpacingBetweenDeclarationsWithAnnotations:DesignTokens.kt$ColorToken$Success : ColorToken</ID>
+    <ID>SpacingBetweenDeclarationsWithAnnotations:DesignTokens.kt$ColorToken$Warning : ColorToken</ID>
+  </CurrentIssues>
+</SmellBaseline>

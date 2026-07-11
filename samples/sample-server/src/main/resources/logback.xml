@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Structured-logging config for the sample server.
+
+  Each event is encoded as a single-line JSON object with keys: timestamp, level,
+  logger, thread, message, and an `mdc` object that carries `request_id` (set by
+  RequestIdPlugin). This is the format expected by Loki / ELK / Datadog ingest.
+
+  The Logback JSON encoder (`logback-jackson` + `logback-json-classic` from the
+  `ch.qos.logback.contrib` group) produces this. It depends on Jackson at runtime;
+  Jackson is pulled in transitively by `logback-jackson`.
+-->
+<configuration>
+  <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder class="ch.qos.logback.core.encoder.LayoutWrappingEncoder">
+      <layout class="ch.qos.logback.contrib.json.classic.JsonLayout">
+        <jsonFormatter class="ch.qos.logback.contrib.jackson.JacksonJsonFormatter">
+          <prettyPrint>false</prettyPrint>
+        </jsonFormatter>
+        <timestampFormat>yyyy-MM-dd'T'HH:mm:ss.SSSXXX</timestampFormat>
+        <appendLineSeparator>true</appendLineSeparator>
+        <includeMDC>true</includeMDC>
+        <includeContextName>false</includeContextName>
+        <includeException>true</includeException>
+      </layout>
+    </encoder>
+  </appender>
+
+  <!-- Quiet down chatty libraries; flip to DEBUG for transient diagnostics. -->
+  <logger name="io.ktor" level="INFO"/>
+  <logger name="io.netty" level="WARN"/>
+  <logger name="org.jetbrains.exposed" level="WARN"/>
+  <logger name="com.zaxxer.hikari" level="INFO"/>
+
+  <root level="INFO">
+    <appender-ref ref="STDOUT"/>
+  </root>
+</configuration>

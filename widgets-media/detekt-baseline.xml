@@ -1,0 +1,15 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>AnnotationOnSeparateLine:AsyncImageRenderer.kt$AsyncImageRenderer$@Suppress("UNUSED_VARIABLE")</ID>
+    <ID>AnnotationOnSeparateLine:ImageRenderer.kt$ImageRenderer$@Suppress("UNUSED_VARIABLE")</ID>
+    <ID>FunctionNaming:ImageLoader.kt$@Composable private fun PlaceholderBox(label: String, modifier: Modifier)</ID>
+    <ID>FunctionNaming:ImageLoader.kt$ImageLoader$@Composable public fun AsyncImage( url: String, contentDescription: String?, contentScale: ContentScale, placeholder: (@Composable (Modifier) -> Unit)?, error: (@Composable (Modifier) -> Unit)?, modifier: Modifier, )</ID>
+    <ID>FunctionNaming:ImageLoader.kt$ImageLoader$@Composable public fun Image( source: String, contentDescription: String?, contentScale: ContentScale, modifier: Modifier, )</ID>
+    <ID>ImportOrdering:AsyncImageRenderer.kt$import androidx.compose.runtime.Composable import androidx.compose.ui.Modifier import dev.sdui.kmp.protocol.AsyncImage as AsyncImageNode import dev.sdui.kmp.protocol.SchemaVersion import dev.sdui.kmp.protocol.UiNode import dev.sdui.kmp.runtime.LocalStateStore import dev.sdui.kmp.runtime.NodeRenderer import dev.sdui.kmp.runtime.RenderNode import dev.sdui.kmp.runtime.applyA11y import dev.sdui.kmp.runtime.resolve import kotlin.reflect.KClass</ID>
+    <ID>ImportOrdering:ImageRenderer.kt$import androidx.compose.runtime.Composable import androidx.compose.ui.Modifier import dev.sdui.kmp.protocol.Image as ImageNode import dev.sdui.kmp.protocol.SchemaVersion import dev.sdui.kmp.runtime.NodeRenderer import dev.sdui.kmp.runtime.StateStore import dev.sdui.kmp.runtime.applyA11y import dev.sdui.kmp.runtime.resolve import kotlin.reflect.KClass</ID>
+    <ID>SpacingBetweenDeclarationsWithAnnotations:AsyncImageRenderer.kt$AsyncImageRenderer$@Suppress("UNUSED_VARIABLE") val subscribe = store.snapshot.value</ID>
+    <ID>SpacingBetweenDeclarationsWithAnnotations:ImageRenderer.kt$ImageRenderer$@Suppress("UNUSED_VARIABLE") val subscribe = store.snapshot.value</ID>
+  </CurrentIssues>
+</SmellBaseline>

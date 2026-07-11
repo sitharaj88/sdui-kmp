@@ -1,0 +1,1386 @@
+{
+  "version": 1,
+  "sealedHierarchies": {
+    "Action": {
+      "discriminator": "type",
+      "subtypes": {
+        "__unknown__": {
+          "fields": {
+            "originalType": {
+              "type": "kotlin.String",
+              "nullable": false,
+              "optional": true
+            }
+          }
+        },
+        "navigate": {
+          "fields": {
+            "destination": {
+              "type": "dev.sdui.kmp.protocol.Destination",
+              "nullable": false,
+              "optional": false
+            },
+            "replace": {
+              "type": "kotlin.Boolean",
+              "nullable": false,
+              "optional": true
+            }
+          }
+        },
+        "sequence": {
+          "fields": {
+            "actions": {
+              "type": "kotlin.collections.ArrayList",
+              "nullable": false,
+              "optional": false
+            }
+          }
+        },
+        "submit": {
+          "fields": {
+            "endpoint": {
+              "type": "kotlin.String",
+              "nullable": false,
+              "optional": false
+            },
+            "method": {
+              "type": "dev.sdui.kmp.protocol.HttpMethod",
+              "nullable": false,
+              "optional": true
+            },
+            "onError": {
+              "type": "kotlin.collections.ArrayList",
+              "nullable": false,
+              "optional": true
+            },
+            "onSuccess": {
+              "type": "kotlin.collections.ArrayList",
+              "nullable": false,
+              "optional": true
+            },
+            "payload": {
+              "type": "kotlin.collections.LinkedHashMap",
+              "nullable": false,
+              "optional": true
+            },
+            "policy": {
+              "type": "dev.sdui.kmp.protocol.ActionPolicy",
+              "nullable": false,
+              "optional": true
+            }
+          }
+        },
+        "update_state": {
+          "fields": {
+            "path": {
+              "type": "dev.sdui.kmp.protocol.StatePath",
+              "nullable": false,
+              "optional": false
+            },
+            "value": {
+              "type": "dev.sdui.kmp.protocol.Value",
+              "nullable": false,
+              "optional": false
+            }
+          }
+        },
+        "when": {
+          "fields": {
+            "condition": {
+              "type": "dev.sdui.kmp.protocol.Predicate",
+              "nullable": false,
+              "optional": false
+            },
+            "otherwise": {
+              "type": "kotlin.collections.ArrayList",
+              "nullable": false,
+              "optional": true
+            },
+            "then": {
+              "type": "kotlin.collections.ArrayList",
+              "nullable": false,
+              "optional": false
+            }
+          }
+        }
+      }
+    },
+    "ColorToken": {
+      "discriminator": "type",
+      "subtypes": {
+        "__unknown__": {
+          "fields": {
+            "originalType": {
+              "type": "kotlin.String",
+              "nullable": false,
+              "optional": true
+            }
+          }
+        },
+        "error": {
+          "fields": {}
+        },
+        "muted": {
+          "fields": {}
+        },
+        "on_primary": {
+          "fields": {}
+        },
+        "on_surface": {
+          "fields": {}
+        },
+        "primary": {
+          "fields": {}
+        },
+        "success": {
+          "fields": {}
+        },
+        "surface": {
+          "fields": {}
+        },
+        "warning": {
+          "fields": {}
+        }
+      }
+    },
+    "Destination": {
+      "discriminator": "type",
+      "subtypes": {
+        "__unknown__": {
+          "fields": {
+            "originalType": {
+              "type": "kotlin.String",
+              "nullable": false,
+              "optional": true
+            }
+          }
+        },
+        "back": {
+          "fields": {
+            "count": {
+              "type": "kotlin.Int",
+              "nullable": false,
+              "optional": true
+            }
+          }
+        },
+        "modal": {
+          "fields": {
+            "args": {
+              "type": "kotlinx.serialization.json.JsonObject",
+              "nullable": false,
+              "optional": true
+            },
+            "route": {
+              "type": "kotlin.String",
+              "nullable": false,
+              "optional": false
+            }
+          }
+        },
+        "pop_to_root": {
+          "fields": {}
+        },
+        "screen": {
+          "fields": {
+            "args": {
+              "type": "kotlinx.serialization.json.JsonObject",
+              "nullable": false,
+              "optional": true
+            },
+            "route": {
+              "type": "kotlin.String",
+              "nullable": false,
+              "optional": false
+            }
+          }
+        },
+        "tab": {
+          "fields": {
+            "tabId": {
+              "type": "kotlin.String",
+              "nullable": false,
+              "optional": false
+            }
+          }
+        }
+      }
+    },
+    "IconToken": {
+      "discriminator": "type",
+      "subtypes": {
+        "__unknown__": {
+          "fields": {
+            "originalType": {
+              "type": "kotlin.String",
+              "nullable": false,
+              "optional": true
+            }
+          }
+        },
+        "named": {
+          "fields": {
+            "name": {
+              "type": "kotlin.String",
+              "nullable": false,
+              "optional": false
+            }
+          }
+        }
+      }
+    },
+    "ListSource": {
+      "discriminator": "type",
+      "subtypes": {
+        "__unknown__": {
+          "fields": {
+            "originalType": {
+              "type": "kotlin.String",
+              "nullable": false,
+              "optional": true
+            }
+          }
+        },
+        "bound": {
+          "fields": {
+            "path": {
+              "type": "dev.sdui.kmp.protocol.StatePath",
+              "nullable": false,
+              "optional": false
+            }
+          }
+        },
+        "inline": {
+          "fields": {
+            "items": {
+              "type": "kotlin.collections.ArrayList",
+              "nullable": false,
+              "optional": false
+            }
+          }
+        },
+        "paged": {
+          "fields": {
+            "cursor": {
+              "type": "kotlin.String?",
+              "nullable": true,
+              "optional": true
+            },
+            "endpoint": {
+              "type": "kotlin.String",
+              "nullable": false,
+              "optional": false
+            },
+            "pageSize": {
+              "type": "kotlin.Int",
+              "nullable": false,
+              "optional": true
+            }
+          }
+        }
+      }
+    },
+    "LiveEvent": {
+      "discriminator": "type",
+      "subtypes": {
+        "__unknown__": {
+          "fields": {
+            "originalType": {
+              "type": "kotlin.String",
+              "nullable": false,
+              "optional": true
+            }
+          }
+        },
+        "state_update": {
+          "fields": {
+            "updates": {
+              "type": "kotlin.collections.LinkedHashMap",
+              "nullable": false,
+              "optional": false
+            }
+          }
+        },
+        "tree_patch": {
+          "fields": {
+            "patch": {
+              "type": "dev.sdui.kmp.protocol.TreePatch",
+              "nullable": false,
+              "optional": false
+            }
+          }
+        }
+      }
+    },
+    "PatchOp": {
+      "discriminator": "type",
+      "subtypes": {
+        "__unknown__": {
+          "fields": {
+            "originalType": {
+              "type": "kotlin.String",
+              "nullable": false,
+              "optional": true
+            }
+          }
+        },
+        "append": {
+          "fields": {
+            "nodes": {
+              "type": "kotlin.collections.ArrayList",
+              "nullable": false,
+              "optional": false
+            },
+            "parentId": {
+              "type": "dev.sdui.kmp.protocol.NodeId",
+              "nullable": false,
+              "optional": false
+            }
+          }
+        },
+        "remove": {
+          "fields": {
+            "nodeIds": {
+              "type": "kotlin.collections.ArrayList",
+              "nullable": false,
+              "optional": false
+            }
+          }
+        },
+        "replace": {
+          "fields": {
+            "node": {
+              "type": "dev.sdui.kmp.protocol.UiNode",
+              "nullable": false,
+              "optional": false
+            },
+            "nodeId": {
+              "type": "dev.sdui.kmp.protocol.NodeId",
+              "nullable": false,
+              "optional": false
+            }
+          }
+        }
+      }
+    },
+    "Predicate": {
+      "discriminator": "type",
+      "subtypes": {
+        "__unknown__": {
+          "fields": {
+            "originalType": {
+              "type": "kotlin.String",
+              "nullable": false,
+              "optional": true
+            }
+          }
+        },
+        "all": {
+          "fields": {
+            "predicates": {
+              "type": "kotlin.collections.ArrayList",
+              "nullable": false,
+              "optional": false
+            }
+          }
+        },
+        "any": {
+          "fields": {
+            "predicates": {
+              "type": "kotlin.collections.ArrayList",
+              "nullable": false,
+              "optional": false
+            }
+          }
+        },
+        "empty": {
+          "fields": {
+            "path": {
+              "type": "dev.sdui.kmp.protocol.StatePath",
+              "nullable": false,
+              "optional": false
+            }
+          }
+        },
+        "eq": {
+          "fields": {
+            "path": {
+              "type": "dev.sdui.kmp.protocol.StatePath",
+              "nullable": false,
+              "optional": false
+            },
+            "value": {
+              "type": "kotlinx.serialization.json.JsonElement",
+              "nullable": false,
+              "optional": false
+            }
+          }
+        },
+        "not": {
+          "fields": {
+            "inner": {
+              "type": "dev.sdui.kmp.protocol.Predicate",
+              "nullable": false,
+              "optional": false
+            }
+          }
+        }
+      }
+    },
+    "RetryPolicy": {
+      "discriminator": "type",
+      "subtypes": {
+        "__unknown__": {
+          "fields": {
+            "originalType": {
+              "type": "kotlin.String",
+              "nullable": false,
+              "optional": true
+            }
+          }
+        },
+        "exponential": {
+          "fields": {
+            "initialDelayMs": {
+              "type": "kotlin.Long",
+              "nullable": false,
+              "optional": true
+            },
+            "maxAttempts": {
+              "type": "kotlin.Int",
+              "nullable": false,
+              "optional": true
+            }
+          }
+        },
+        "none": {
+          "fields": {}
+        }
+      }
+    },
+    "UiNode": {
+      "discriminator": "type",
+      "subtypes": {
+        "__unknown__": {
+          "fields": {
+            "fallback": {
+              "type": "dev.sdui.kmp.protocol.UiNode?",
+              "nullable": true,
+              "optional": true
+            },
+            "id": {
+              "type": "dev.sdui.kmp.protocol.NodeId",
+              "nullable": false,
+              "optional": true
+            },
+            "originalType": {
+              "type": "kotlin.String",
+              "nullable": false,
+              "optional": true
+            },
+            "since": {
+              "type": "dev.sdui.kmp.protocol.SchemaVersion",
+              "nullable": false,
+              "optional": true
+            }
+          }
+        },
+        "async_image": {
+          "fields": {
+            "a11y": {
+              "type": "dev.sdui.kmp.protocol.A11y?",
+              "nullable": true,
+              "optional": true
+            },
+            "contentDescription": {
+              "type": "dev.sdui.kmp.protocol.Value?",
+              "nullable": true,
+              "optional": true
+            },
+            "contentScale": {
+              "type": "dev.sdui.kmp.protocol.ContentScale",
+              "nullable": false,
+              "optional": true
+            },
+            "error": {
+              "type": "dev.sdui.kmp.protocol.UiNode?",
+              "nullable": true,
+              "optional": true
+            },
+            "fallback": {
+              "type": "dev.sdui.kmp.protocol.UiNode?",
+              "nullable": true,
+              "optional": true
+            },
+            "id": {
+              "type": "dev.sdui.kmp.protocol.NodeId",
+              "nullable": false,
+              "optional": false
+            },
+            "placeholder": {
+              "type": "dev.sdui.kmp.protocol.UiNode?",
+              "nullable": true,
+              "optional": true
+            },
+            "since": {
+              "type": "dev.sdui.kmp.protocol.SchemaVersion",
+              "nullable": false,
+              "optional": true
+            },
+            "url": {
+              "type": "dev.sdui.kmp.protocol.Value",
+              "nullable": false,
+              "optional": false
+            }
+          }
+        },
+        "button": {
+          "fields": {
+            "a11y": {
+              "type": "dev.sdui.kmp.protocol.A11y?",
+              "nullable": true,
+              "optional": true
+            },
+            "action": {
+              "type": "dev.sdui.kmp.protocol.Action",
+              "nullable": false,
+              "optional": false
+            },
+            "fallback": {
+              "type": "dev.sdui.kmp.protocol.UiNode?",
+              "nullable": true,
+              "optional": true
+            },
+            "id": {
+              "type": "dev.sdui.kmp.protocol.NodeId",
+              "nullable": false,
+              "optional": false
+            },
+            "label": {
+              "type": "dev.sdui.kmp.protocol.Value",
+              "nullable": false,
+              "optional": false
+            },
+            "since": {
+              "type": "dev.sdui.kmp.protocol.SchemaVersion",
+              "nullable": false,
+              "optional": true
+            },
+            "style": {
+              "type": "dev.sdui.kmp.protocol.ButtonStyle",
+              "nullable": false,
+              "optional": true
+            }
+          }
+        },
+        "checkbox": {
+          "fields": {
+            "a11y": {
+              "type": "dev.sdui.kmp.protocol.A11y?",
+              "nullable": true,
+              "optional": true
+            },
+            "fallback": {
+              "type": "dev.sdui.kmp.protocol.UiNode?",
+              "nullable": true,
+              "optional": true
+            },
+            "id": {
+              "type": "dev.sdui.kmp.protocol.NodeId",
+              "nullable": false,
+              "optional": false
+            },
+            "label": {
+              "type": "dev.sdui.kmp.protocol.Value?",
+              "nullable": true,
+              "optional": true
+            },
+            "path": {
+              "type": "dev.sdui.kmp.protocol.StatePath",
+              "nullable": false,
+              "optional": false
+            },
+            "since": {
+              "type": "dev.sdui.kmp.protocol.SchemaVersion",
+              "nullable": false,
+              "optional": true
+            }
+          }
+        },
+        "column": {
+          "fields": {
+            "a11y": {
+              "type": "dev.sdui.kmp.protocol.A11y?",
+              "nullable": true,
+              "optional": true
+            },
+            "children": {
+              "type": "kotlin.collections.ArrayList",
+              "nullable": false,
+              "optional": true
+            },
+            "fallback": {
+              "type": "dev.sdui.kmp.protocol.UiNode?",
+              "nullable": true,
+              "optional": true
+            },
+            "id": {
+              "type": "dev.sdui.kmp.protocol.NodeId",
+              "nullable": false,
+              "optional": false
+            },
+            "padding": {
+              "type": "dev.sdui.kmp.protocol.EdgeInsets",
+              "nullable": false,
+              "optional": true
+            },
+            "since": {
+              "type": "dev.sdui.kmp.protocol.SchemaVersion",
+              "nullable": false,
+              "optional": true
+            },
+            "spacing": {
+              "type": "dev.sdui.kmp.protocol.Spacing",
+              "nullable": false,
+              "optional": true
+            }
+          }
+        },
+        "image": {
+          "fields": {
+            "a11y": {
+              "type": "dev.sdui.kmp.protocol.A11y?",
+              "nullable": true,
+              "optional": true
+            },
+            "contentDescription": {
+              "type": "dev.sdui.kmp.protocol.Value?",
+              "nullable": true,
+              "optional": true
+            },
+            "contentScale": {
+              "type": "dev.sdui.kmp.protocol.ContentScale",
+              "nullable": false,
+              "optional": true
+            },
+            "fallback": {
+              "type": "dev.sdui.kmp.protocol.UiNode?",
+              "nullable": true,
+              "optional": true
+            },
+            "id": {
+              "type": "dev.sdui.kmp.protocol.NodeId",
+              "nullable": false,
+              "optional": false
+            },
+            "since": {
+              "type": "dev.sdui.kmp.protocol.SchemaVersion",
+              "nullable": false,
+              "optional": true
+            },
+            "source": {
+              "type": "dev.sdui.kmp.protocol.Value",
+              "nullable": false,
+              "optional": false
+            }
+          }
+        },
+        "lazy_list": {
+          "fields": {
+            "a11y": {
+              "type": "dev.sdui.kmp.protocol.A11y?",
+              "nullable": true,
+              "optional": true
+            },
+            "emptyState": {
+              "type": "dev.sdui.kmp.protocol.UiNode?",
+              "nullable": true,
+              "optional": true
+            },
+            "errorState": {
+              "type": "dev.sdui.kmp.protocol.UiNode?",
+              "nullable": true,
+              "optional": true
+            },
+            "fallback": {
+              "type": "dev.sdui.kmp.protocol.UiNode?",
+              "nullable": true,
+              "optional": true
+            },
+            "id": {
+              "type": "dev.sdui.kmp.protocol.NodeId",
+              "nullable": false,
+              "optional": false
+            },
+            "itemKeyPath": {
+              "type": "dev.sdui.kmp.protocol.StatePath",
+              "nullable": false,
+              "optional": false
+            },
+            "itemTemplate": {
+              "type": "dev.sdui.kmp.protocol.UiNode",
+              "nullable": false,
+              "optional": false
+            },
+            "loadingState": {
+              "type": "dev.sdui.kmp.protocol.UiNode?",
+              "nullable": true,
+              "optional": true
+            },
+            "orientation": {
+              "type": "dev.sdui.kmp.protocol.Orientation",
+              "nullable": false,
+              "optional": true
+            },
+            "padding": {
+              "type": "dev.sdui.kmp.protocol.EdgeInsets",
+              "nullable": false,
+              "optional": true
+            },
+            "pullToRefresh": {
+              "type": "kotlin.Boolean",
+              "nullable": false,
+              "optional": true
+            },
+            "since": {
+              "type": "dev.sdui.kmp.protocol.SchemaVersion",
+              "nullable": false,
+              "optional": true
+            },
+            "source": {
+              "type": "dev.sdui.kmp.protocol.ListSource",
+              "nullable": false,
+              "optional": false
+            },
+            "spacing": {
+              "type": "dev.sdui.kmp.protocol.Spacing",
+              "nullable": false,
+              "optional": true
+            }
+          }
+        },
+        "native": {
+          "fields": {
+            "a11y": {
+              "type": "dev.sdui.kmp.protocol.A11y?",
+              "nullable": true,
+              "optional": true
+            },
+            "bindings": {
+              "type": "kotlin.collections.LinkedHashMap",
+              "nullable": false,
+              "optional": true
+            },
+            "config": {
+              "type": "kotlinx.serialization.json.JsonObject",
+              "nullable": false,
+              "optional": true
+            },
+            "events": {
+              "type": "kotlin.collections.LinkedHashMap",
+              "nullable": false,
+              "optional": true
+            },
+            "fallback": {
+              "type": "dev.sdui.kmp.protocol.UiNode?",
+              "nullable": true,
+              "optional": true
+            },
+            "id": {
+              "type": "dev.sdui.kmp.protocol.NodeId",
+              "nullable": false,
+              "optional": false
+            },
+            "kind": {
+              "type": "kotlin.String",
+              "nullable": false,
+              "optional": false
+            },
+            "since": {
+              "type": "dev.sdui.kmp.protocol.SchemaVersion",
+              "nullable": false,
+              "optional": true
+            }
+          }
+        },
+        "nav_host": {
+          "fields": {
+            "a11y": {
+              "type": "dev.sdui.kmp.protocol.A11y?",
+              "nullable": true,
+              "optional": true
+            },
+            "fallback": {
+              "type": "dev.sdui.kmp.protocol.UiNode?",
+              "nullable": true,
+              "optional": true
+            },
+            "id": {
+              "type": "dev.sdui.kmp.protocol.NodeId",
+              "nullable": false,
+              "optional": false
+            },
+            "initial": {
+              "type": "dev.sdui.kmp.protocol.Destination",
+              "nullable": false,
+              "optional": false
+            },
+            "kind": {
+              "type": "dev.sdui.kmp.protocol.NavKind",
+              "nullable": false,
+              "optional": true
+            },
+            "routes": {
+              "type": "kotlin.collections.LinkedHashMap",
+              "nullable": false,
+              "optional": true
+            },
+            "since": {
+              "type": "dev.sdui.kmp.protocol.SchemaVersion",
+              "nullable": false,
+              "optional": true
+            }
+          }
+        },
+        "text": {
+          "fields": {
+            "a11y": {
+              "type": "dev.sdui.kmp.protocol.A11y?",
+              "nullable": true,
+              "optional": true
+            },
+            "color": {
+              "type": "dev.sdui.kmp.protocol.ColorToken?",
+              "nullable": true,
+              "optional": true
+            },
+            "content": {
+              "type": "dev.sdui.kmp.protocol.Value",
+              "nullable": false,
+              "optional": false
+            },
+            "fallback": {
+              "type": "dev.sdui.kmp.protocol.UiNode?",
+              "nullable": true,
+              "optional": true
+            },
+            "id": {
+              "type": "dev.sdui.kmp.protocol.NodeId",
+              "nullable": false,
+              "optional": false
+            },
+            "since": {
+              "type": "dev.sdui.kmp.protocol.SchemaVersion",
+              "nullable": false,
+              "optional": true
+            },
+            "style": {
+              "type": "dev.sdui.kmp.protocol.TextStyleToken",
+              "nullable": false,
+              "optional": true
+            }
+          }
+        },
+        "text_field": {
+          "fields": {
+            "a11y": {
+              "type": "dev.sdui.kmp.protocol.A11y?",
+              "nullable": true,
+              "optional": true
+            },
+            "fallback": {
+              "type": "dev.sdui.kmp.protocol.UiNode?",
+              "nullable": true,
+              "optional": true
+            },
+            "id": {
+              "type": "dev.sdui.kmp.protocol.NodeId",
+              "nullable": false,
+              "optional": false
+            },
+            "keyboard": {
+              "type": "dev.sdui.kmp.protocol.Keyboard",
+              "nullable": false,
+              "optional": true
+            },
+            "path": {
+              "type": "dev.sdui.kmp.protocol.StatePath",
+              "nullable": false,
+              "optional": false
+            },
+            "placeholder": {
+              "type": "dev.sdui.kmp.protocol.Value?",
+              "nullable": true,
+              "optional": true
+            },
+            "secure": {
+              "type": "kotlin.Boolean",
+              "nullable": false,
+              "optional": true
+            },
+            "since": {
+              "type": "dev.sdui.kmp.protocol.SchemaVersion",
+              "nullable": false,
+              "optional": true
+            },
+            "validation": {
+              "type": "dev.sdui.kmp.protocol.Validation?",
+              "nullable": true,
+              "optional": true
+            }
+          }
+        }
+      }
+    },
+    "Validation": {
+      "discriminator": "type",
+      "subtypes": {
+        "__unknown__": {
+          "fields": {
+            "originalType": {
+              "type": "kotlin.String",
+              "nullable": false,
+              "optional": true
+            }
+          }
+        },
+        "all": {
+          "fields": {
+            "validations": {
+              "type": "kotlin.collections.ArrayList",
+              "nullable": false,
+              "optional": false
+            }
+          }
+        },
+        "email": {
+          "fields": {
+            "message": {
+              "type": "dev.sdui.kmp.protocol.Value?",
+              "nullable": true,
+              "optional": true
+            }
+          }
+        },
+        "max_length": {
+          "fields": {
+            "length": {
+              "type": "kotlin.Int",
+              "nullable": false,
+              "optional": false
+            },
+            "message": {
+              "type": "dev.sdui.kmp.protocol.Value?",
+              "nullable": true,
+              "optional": true
+            }
+          }
+        },
+        "min_length": {
+          "fields": {
+            "length": {
+              "type": "kotlin.Int",
+              "nullable": false,
+              "optional": false
+            },
+            "message": {
+              "type": "dev.sdui.kmp.protocol.Value?",
+              "nullable": true,
+              "optional": true
+            }
+          }
+        },
+        "required": {
+          "fields": {
+            "message": {
+              "type": "dev.sdui.kmp.protocol.Value?",
+              "nullable": true,
+              "optional": true
+            }
+          }
+        }
+      }
+    },
+    "Value": {
+      "discriminator": "type",
+      "subtypes": {
+        "__unknown__": {
+          "fields": {
+            "originalType": {
+              "type": "kotlin.String",
+              "nullable": false,
+              "optional": true
+            }
+          }
+        },
+        "bind": {
+          "fields": {
+            "path": {
+              "type": "dev.sdui.kmp.protocol.StatePath",
+              "nullable": false,
+              "optional": false
+            }
+          }
+        },
+        "literal": {
+          "fields": {
+            "value": {
+              "type": "kotlinx.serialization.json.JsonElement",
+              "nullable": false,
+              "optional": false
+            }
+          }
+        },
+        "template": {
+          "fields": {
+            "bindings": {
+              "type": "kotlin.collections.LinkedHashMap",
+              "nullable": false,
+              "optional": true
+            },
+            "pattern": {
+              "type": "kotlin.String",
+              "nullable": false,
+              "optional": false
+            }
+          }
+        }
+      }
+    }
+  },
+  "enums": {
+    "A11yRole": [
+      "Button",
+      "Checkbox",
+      "Header",
+      "Image",
+      "Link",
+      "List",
+      "ListItem",
+      "Radio",
+      "Slider",
+      "Switch",
+      "TextField"
+    ],
+    "ButtonStyle": [
+      "Destructive",
+      "Primary",
+      "Secondary",
+      "Tertiary"
+    ],
+    "ContentScale": [
+      "Crop",
+      "Fill",
+      "Fit",
+      "Inside",
+      "None"
+    ],
+    "ElevationToken": [
+      "Lg",
+      "Md",
+      "None",
+      "Sm"
+    ],
+    "Execution": [
+      "LocalOnly",
+      "OfflineQueue",
+      "Online"
+    ],
+    "HttpMethod": [
+      "Delete",
+      "Get",
+      "Patch",
+      "Post",
+      "Put"
+    ],
+    "Keyboard": [
+      "Email",
+      "Number",
+      "Password",
+      "Phone",
+      "Text",
+      "Url"
+    ],
+    "LiveRegion": [
+      "Assertive",
+      "Off",
+      "Polite"
+    ],
+    "NavKind": [
+      "BottomSheet",
+      "Stack",
+      "Tab",
+      "Unspecified"
+    ],
+    "Orientation": [
+      "Horizontal",
+      "Vertical"
+    ],
+    "RadiusToken": [
+      "Full",
+      "Lg",
+      "Md",
+      "None",
+      "Sm"
+    ],
+    "Spacing": [
+      "Lg",
+      "Md",
+      "None",
+      "Sm",
+      "Xl",
+      "Xs",
+      "Xxl"
+    ],
+    "StateScope": [
+      "Ephemeral",
+      "Global",
+      "Node",
+      "Screen"
+    ],
+    "TextStyleToken": [
+      "Body",
+      "BodySmall",
+      "Caption",
+      "Display",
+      "Error",
+      "Heading",
+      "Label",
+      "Title"
+    ]
+  },
+  "dataClasses": {
+    "A11y": {
+      "fields": {
+        "headingLevel": {
+          "type": "kotlin.Int?",
+          "nullable": true,
+          "optional": true
+        },
+        "hint": {
+          "type": "dev.sdui.kmp.protocol.Value?",
+          "nullable": true,
+          "optional": true
+        },
+        "isHidden": {
+          "type": "kotlin.Boolean",
+          "nullable": false,
+          "optional": true
+        },
+        "label": {
+          "type": "dev.sdui.kmp.protocol.Value?",
+          "nullable": true,
+          "optional": true
+        },
+        "liveRegion": {
+          "type": "dev.sdui.kmp.protocol.LiveRegion",
+          "nullable": false,
+          "optional": true
+        },
+        "role": {
+          "type": "dev.sdui.kmp.protocol.A11yRole?",
+          "nullable": true,
+          "optional": true
+        }
+      }
+    },
+    "ActionPolicy": {
+      "fields": {
+        "execution": {
+          "type": "dev.sdui.kmp.protocol.Execution",
+          "nullable": false,
+          "optional": true
+        },
+        "idempotencyKey": {
+          "type": "dev.sdui.kmp.protocol.StatePath?",
+          "nullable": true,
+          "optional": true
+        },
+        "optimistic": {
+          "type": "dev.sdui.kmp.protocol.OptimisticUpdate?",
+          "nullable": true,
+          "optional": true
+        },
+        "retry": {
+          "type": "dev.sdui.kmp.protocol.RetryPolicy",
+          "nullable": false,
+          "optional": true
+        }
+      }
+    },
+    "EdgeInsets": {
+      "fields": {
+        "bottom": {
+          "type": "dev.sdui.kmp.protocol.Spacing",
+          "nullable": false,
+          "optional": true
+        },
+        "end": {
+          "type": "dev.sdui.kmp.protocol.Spacing",
+          "nullable": false,
+          "optional": true
+        },
+        "start": {
+          "type": "dev.sdui.kmp.protocol.Spacing",
+          "nullable": false,
+          "optional": true
+        },
+        "top": {
+          "type": "dev.sdui.kmp.protocol.Spacing",
+          "nullable": false,
+          "optional": true
+        }
+      }
+    },
+    "NodeId": {
+      "fields": {
+        "value": {
+          "type": "kotlin.String",
+          "nullable": false,
+          "optional": false
+        }
+      }
+    },
+    "OptimisticUpdate": {
+      "fields": {
+        "rollbackOnError": {
+          "type": "kotlin.Boolean",
+          "nullable": false,
+          "optional": true
+        },
+        "stateUpdates": {
+          "type": "kotlin.collections.LinkedHashMap",
+          "nullable": false,
+          "optional": false
+        }
+      }
+    },
+    "Pagination": {
+      "fields": {
+        "items": {
+          "type": "kotlin.collections.ArrayList",
+          "nullable": false,
+          "optional": false
+        },
+        "nextCursor": {
+          "type": "kotlin.String?",
+          "nullable": true,
+          "optional": true
+        }
+      }
+    },
+    "SchemaVersion": {
+      "fields": {
+        "value": {
+          "type": "kotlin.Int",
+          "nullable": false,
+          "optional": false
+        }
+      }
+    },
+    "Screen": {
+      "fields": {
+        "id": {
+          "type": "dev.sdui.kmp.protocol.ScreenId",
+          "nullable": false,
+          "optional": false
+        },
+        "initialState": {
+          "type": "kotlin.collections.LinkedHashMap",
+          "nullable": false,
+          "optional": true
+        },
+        "metadata": {
+          "type": "dev.sdui.kmp.protocol.ScreenMetadata",
+          "nullable": false,
+          "optional": true
+        },
+        "root": {
+          "type": "dev.sdui.kmp.protocol.UiNode",
+          "nullable": false,
+          "optional": false
+        },
+        "stateDeclarations": {
+          "type": "kotlin.collections.ArrayList",
+          "nullable": false,
+          "optional": true
+        },
+        "version": {
+          "type": "dev.sdui.kmp.protocol.SchemaVersion",
+          "nullable": false,
+          "optional": false
+        }
+      }
+    },
+    "ScreenId": {
+      "fields": {
+        "value": {
+          "type": "kotlin.String",
+          "nullable": false,
+          "optional": false
+        }
+      }
+    },
+    "ScreenMetadata": {
+      "fields": {
+        "analyticsName": {
+          "type": "kotlin.String?",
+          "nullable": true,
+          "optional": true
+        },
+        "cacheTtlSeconds": {
+          "type": "kotlin.Long?",
+          "nullable": true,
+          "optional": true
+        },
+        "title": {
+          "type": "dev.sdui.kmp.protocol.Value?",
+          "nullable": true,
+          "optional": true
+        }
+      }
+    },
+    "StateDeclaration": {
+      "fields": {
+        "initial": {
+          "type": "kotlinx.serialization.json.JsonElement",
+          "nullable": false,
+          "optional": false
+        },
+        "path": {
+          "type": "dev.sdui.kmp.protocol.StatePath",
+          "nullable": false,
+          "optional": false
+        },
+        "persist": {
+          "type": "kotlin.Boolean",
+          "nullable": false,
+          "optional": true
+        },
+        "scope": {
+          "type": "dev.sdui.kmp.protocol.StateScope",
+          "nullable": false,
+          "optional": true
+        }
+      }
+    },
+    "StatePath": {
+      "fields": {
+        "value": {
+          "type": "kotlin.String",
+          "nullable": false,
+          "optional": false
+        }
+      }
+    },
+    "TreePatch": {
+      "fields": {
+        "ops": {
+          "type": "kotlin.collections.ArrayList",
+          "nullable": false,
+          "optional": false
+        }
+      }
+    }
+  }
+}

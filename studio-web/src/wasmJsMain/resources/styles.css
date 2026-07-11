@@ -1,0 +1,40 @@
+/*
+ * sdui-kmp Studio — admin console base styles.
+ *
+ * Minimal on purpose: Compose Multiplatform owns the entire visual surface inside #root.
+ * These rules only style the surrounding chrome (page background, system fonts) so the
+ * page does not flash unstyled while the wasm bundle is still loading.
+ *
+ * Anything that should react to Material3 theme changes lives inside the Compose tree,
+ * not here.
+ */
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+}
+
+body {
+  background: #f4f5f7;
+  color: #1f2328;
+  font-family:
+    system-ui,
+    -apple-system,
+    "Segoe UI",
+    Roboto,
+    "Helvetica Neue",
+    Arial,
+    sans-serif;
+  font-size: 14px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+  height: 100%;
+  width: 100%;
+}

@@ -1,0 +1,29 @@
+{
+  "id": "preview-hello",
+  "version": 1,
+  "root": {
+    "type": "column",
+    "id": "root",
+    "children": [
+      {
+        "type": "text",
+        "id": "title",
+        "content": { "type": "literal", "value": "sdui-kmp preview" },
+        "style": "Heading"
+      },
+      {
+        "type": "text",
+        "id": "hint",
+        "content": { "type": "literal", "value": "Edit this file and save — the right pane refreshes instantly." }
+      },
+      {
+        "type": "button",
+        "id": "cta",
+        "label": { "type": "literal", "value": "Primary action" },
+        "action": { "type": "navigate", "destination": { "type": "back" } }
+      }
+    ],
+    "spacing": "Md",
+    "padding": { "top": "Lg", "start": "Lg", "end": "Lg", "bottom": "Lg" }
+  }
+}

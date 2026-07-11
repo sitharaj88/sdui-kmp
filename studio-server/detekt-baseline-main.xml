@@ -1,0 +1,10 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>UnreachableCode:ExperimentStore.kt$ExperimentStore$return AudienceRow( id = this[Audiences.id], name = this[Audiences.name], description = this[Audiences.description], predicate = pred, createdAt = this[Audiences.createdAt], createdBy = this[Audiences.createdBy], )</ID>
+    <ID>UnreachableCode:ExperimentStore.kt$ExperimentStore$val pred = runCatching { PredicateJson.decodeFromString(AudiencePredicate.serializer(), raw) }.getOrNull() ?: return null</ID>
+    <ID>UseAnyOrNoneInsteadOfFind:ExperimentStore.kt$ExperimentStore$firstOrNull()</ID>
+    <ID>UseAnyOrNoneInsteadOfFind:ScreenStore.kt$ScreenStore$firstOrNull()</ID>
+  </CurrentIssues>
+</SmellBaseline>

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Logging config for the Studio backend.
+
+  Plain pattern layout (vs. the sample-server's JSON layout) — Studio is operator-facing and
+  console-friendliness wins for now. Production deployments can swap in the same JSON encoder
+  the sample-server uses by referencing logback-jackson.
+
+  `%X{request_id}` surfaces the correlation id set by StudioRequestIdPlugin so an operator can
+  trace a single request across the access log and any handler log lines.
+-->
+<configuration>
+  <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder>
+      <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%thread] [%X{request_id:-}] %logger{36} - %msg%n</pattern>
+    </encoder>
+  </appender>
+
+  <logger name="io.ktor" level="INFO"/>
+  <logger name="io.netty" level="WARN"/>
+  <logger name="org.jetbrains.exposed" level="WARN"/>
+  <logger name="com.zaxxer.hikari" level="INFO"/>
+
+  <root level="INFO">
+    <appender-ref ref="STDOUT"/>
+  </root>
+</configuration>

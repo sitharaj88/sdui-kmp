@@ -1,0 +1,72 @@
+# docker-compose for the Studio backend (control plane).
+#
+# Brings up:
+#   - `db`     : Postgres 16, with a named volume so data survives restarts.
+#   - `flyway` : one-shot migration runner, applies db/migrations/V*.sql BEFORE the app starts.
+#                studio-server deliberately does NOT auto-DDL on Postgres (see StudioDatabase),
+#                so this service is how the production schema is created and evolved.
+#   - `app`    : the studio backend, depending on a healthy db and a completed migration run.
+#
+# Build context is the repository root so the multi-module Gradle build can resolve all
+# sibling projects.
+#
+# SECURITY: the STUDIO_JWT_SECRET below is a local-compose placeholder. In any real deployment
+# override it with a strong (>= 32 char) random secret via your secrets manager — studio-server
+# refuses to boot outside SDUI_ENV=dev without it.
+
+services:
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: sdui_studio
+      POSTGRES_PASSWORD: sdui_studio
+      POSTGRES_DB: sdui_studio
+    volumes:
+      - sdui_studio_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sdui_studio -d sdui_studio"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    ports:
+      - "5433:5432"
+
+  flyway:
+    image: flyway/flyway:10-alpine
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./db/migrations:/flyway/sql:ro
+    command: >-
+      -url=jdbc:postgresql://db:5432/sdui_studio
+      -user=sdui_studio
+      -password=sdui_studio
+      -connectRetries=10
+      migrate
+
+  app:
+    build:
+      context: ../..
+      dockerfile: studio-server/Dockerfile
+    depends_on:
+      db:
+        condition: service_healthy
+      flyway:
+        condition: service_completed_successfully
+    environment:
+      PORT: "8080"
+      # Postgres path — no H2 fallback. StudioDatabase requires this outside a dev env.
+      JDBC_URL: "jdbc:postgresql://db:5432/sdui_studio"
+      JDBC_USER: "sdui_studio"
+      JDBC_PASSWORD: "sdui_studio"
+      LIVE_BACKEND: "postgres"
+      # Placeholder secret for local compose only — OVERRIDE in real deployments.
+      STUDIO_JWT_SECRET: "local-compose-only-secret-override-me-32ch"
+      SDUI_ENV: "production"
+    ports:
+      - "8081:8080"
+
+volumes:
+  sdui_studio_pg_data:
