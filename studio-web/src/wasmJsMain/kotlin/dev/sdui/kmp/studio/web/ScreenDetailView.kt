@@ -1,5 +1,6 @@
 package dev.sdui.kmp.studio.web
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -8,17 +9,17 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.AssistChip
-import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Tab
-import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -30,10 +31,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import dev.sdui.kmp.protocol.Screen
 import dev.sdui.kmp.protocol.SduiJson
 import dev.sdui.kmp.runtime.NativeSurfaces
@@ -45,8 +47,26 @@ import dev.sdui.kmp.studio.web.api.DraftSaveResult
 import dev.sdui.kmp.studio.web.api.PublishResult
 import dev.sdui.kmp.studio.web.api.ScreenVersion
 import dev.sdui.kmp.studio.web.api.StudioApi
+import dev.sdui.kmp.studio.web.components.ChipKind
+import dev.sdui.kmp.studio.web.components.DevicePreviewFrame
+import dev.sdui.kmp.studio.web.components.EmptyState
+import dev.sdui.kmp.studio.web.components.ErrorState
+import dev.sdui.kmp.studio.web.components.InlineStatus
+import dev.sdui.kmp.studio.web.components.LoadingState
+import dev.sdui.kmp.studio.web.components.SegmentOption
+import dev.sdui.kmp.studio.web.components.SegmentedControl
+import dev.sdui.kmp.studio.web.components.StatusChip
+import dev.sdui.kmp.studio.web.components.StatusKind
+import dev.sdui.kmp.studio.web.components.StudioPanel
+import dev.sdui.kmp.studio.web.components.StudioTabs
+import dev.sdui.kmp.studio.web.components.ToolbarButton
+import dev.sdui.kmp.studio.web.components.ToolbarOutlinedButton
+import dev.sdui.kmp.studio.web.components.ToolbarTextButton
+import dev.sdui.kmp.studio.web.components.ValidationBanner
 import dev.sdui.kmp.studio.web.editor.VisualEditor
 import dev.sdui.kmp.studio.web.state.AuthState
+import dev.sdui.kmp.studio.web.theme.StudioIcons
+import dev.sdui.kmp.studio.web.theme.studioColors
 import dev.sdui.kmp.widgetscore.WidgetsCore
 import dev.sdui.kmp.widgetsforms.WidgetsForms
 import dev.sdui.kmp.widgetsmedia.WidgetsMedia
@@ -67,13 +87,14 @@ import kotlinx.coroutines.flow.distinctUntilChanged
  *  * "Publish" — `POST /admin/screens/{id}/publish`. Disabled while there are unsaved edits.
  *  * "Discard changes" — re-loads the body from the server, dropping local edits.
  *
- * The preview pane re-renders on every keystroke that produces a structurally-valid `Screen`.
- * Decode errors surface inline (in red) without touching the preview, so the editor sees the
- * last successful render while they fix the JSON.
+ * The preview pane re-renders on every keystroke that produces a structurally-valid `Screen`,
+ * inside a [DevicePreviewFrame] so tokens resolve against a stock (light by default) theme
+ * rather than the Studio's dark one. Decode errors surface inline without touching the
+ * preview, so the editor sees the last successful render while they fix the JSON.
  *
  * No submit handler is wired into the preview — `Action.Submit` triggered from rendered widgets
  * is a no-op here. That is the correct behaviour: clicking "Like" inside the preview must not
- * fire a request against the production server. A recording mock submit handler is S5 work.
+ * fire a request against the production server.
  *
  * History tab is read-only by default; admins additionally see a "Revert" button per row.
  */
@@ -87,19 +108,12 @@ public fun ScreenDetailView(
     var refreshTick by remember(screenId) { mutableStateOf(0) }
 
     Column(modifier = Modifier.fillMaxSize()) {
-        TabRow(selectedTabIndex = tab.ordinal) {
-            Tab(
-                selected = tab == DetailTab.Editor,
-                onClick = { tab = DetailTab.Editor },
-                text = { Text("Editor") },
-            )
-            Tab(
-                selected = tab == DetailTab.History,
-                onClick = { tab = DetailTab.History },
-                text = { Text("History") },
-            )
-        }
-        Box(modifier = Modifier.fillMaxSize().padding(top = 8.dp)) {
+        StudioTabs(
+            labels = listOf("Editor", "History"),
+            selectedIndex = tab.ordinal,
+            onSelect = { tab = DetailTab.entries[it] },
+        )
+        Box(modifier = Modifier.fillMaxSize().padding(top = 10.dp)) {
             when (tab) {
                 DetailTab.Editor -> EditorTab(
                     api = api,
@@ -122,7 +136,6 @@ public fun ScreenDetailView(
 private enum class DetailTab { Editor, History }
 
 @Composable
-@Suppress("LongMethod")
 private fun EditorTab(
     api: StudioApi,
     screenId: String,
@@ -158,12 +171,8 @@ private fun EditorTab(
 
     val body = initialBody
     when {
-        loadingMessage != null -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            CircularProgressIndicator()
-        }
-        loadError != null -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text("Could not load screen $screenId: $loadError")
-        }
+        loadingMessage != null -> LoadingState(label = "Loading $screenId…")
+        loadError != null -> ErrorState(message = "Could not load screen $screenId: $loadError")
         body != null -> EditorPanes(
             api = api,
             screenId = screenId,
@@ -269,51 +278,57 @@ private fun EditorPanes(
         Row(
             modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Text(
                 text = screenId,
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.padding(end = 12.dp),
+                style = MaterialTheme.typography.titleMedium.copy(fontFamily = FontFamily.Monospace),
+                modifier = Modifier.padding(end = 4.dp),
             )
             if (hasDraft) {
-                AssistChip(
-                    onClick = {},
-                    enabled = false,
-                    label = { Text("draft loaded") },
-                    colors = AssistChipDefaults.assistChipColors(),
-                )
+                StatusChip(text = "Draft", kind = ChipKind.Warning)
             }
             Box(modifier = Modifier.weight(1f))
-            Button(
+            SegmentedControl(
+                options = listOf(
+                    SegmentOption(label = "JSON", icon = StudioIcons.Code),
+                    SegmentOption(label = "Visual", icon = StudioIcons.Eye, enabled = lastValidScreen != null),
+                ),
+                selectedIndex = editorMode.ordinal,
+                onSelect = { editorMode = EditorMode.entries[it] },
+            )
+            Box(modifier = Modifier.padding(start = 4.dp))
+            if (saveStatus is SaveStatus.Saving) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(TOOLBAR_SPINNER_SIZE),
+                    strokeWidth = TOOLBAR_SPINNER_STROKE,
+                )
+            }
+            ToolbarButton(
+                text = "Save draft",
+                icon = StudioIcons.Save,
                 onClick = { saveTick += 1 },
                 enabled = unsaved && saveStatus !is SaveStatus.Saving && decodeError == null,
-            ) {
-                if (saveStatus is SaveStatus.Saving) {
-                    CircularProgressIndicator(modifier = Modifier.padding(end = 8.dp))
-                }
-                Text("Save draft")
-            }
-            OutlinedButton(
+            )
+            ToolbarOutlinedButton(
+                text = "Publish",
+                icon = StudioIcons.Publish,
                 onClick = { publishTick += 1 },
                 enabled = !unsaved &&
                     hasDraft &&
                     publishStatus !is PublishStatus.Publishing &&
                     decodeError == null,
-                modifier = Modifier.padding(start = 8.dp),
-            ) {
-                Text("Publish")
-            }
-            TextButton(
+            )
+            ToolbarTextButton(
+                text = "Discard",
+                icon = StudioIcons.Undo,
                 onClick = {
                     text = lastSavedText
                     saveStatus = SaveStatus.Idle
                     publishStatus = PublishStatus.Idle
                 },
                 enabled = unsaved,
-                modifier = Modifier.padding(start = 4.dp),
-            ) {
-                Text("Discard changes")
-            }
+            )
         }
 
         StatusStrip(
@@ -323,17 +338,7 @@ private fun EditorPanes(
             decodeError = decodeError,
         )
 
-        Row(modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
-            OutlinedButton(
-                onClick = { editorMode = EditorMode.Json },
-                enabled = editorMode != EditorMode.Json,
-            ) { Text("JSON") }
-            OutlinedButton(
-                onClick = { editorMode = EditorMode.Visual },
-                enabled = editorMode != EditorMode.Visual && lastValidScreen != null,
-                modifier = Modifier.padding(start = 4.dp),
-            ) { Text("Visual") }
-        }
+        Box(Modifier.padding(bottom = 8.dp))
 
         when (editorMode) {
             EditorMode.Json -> Row(
@@ -355,10 +360,9 @@ private fun EditorPanes(
             EditorMode.Visual -> {
                 val visualSeed = lastValidScreen
                 if (visualSeed == null) {
-                    Text(
-                        text = "Visual editor needs a structurally-valid Screen JSON; " +
-                            "fix decode errors first.",
-                        color = MaterialTheme.colorScheme.error,
+                    InlineStatus(
+                        kind = StatusKind.Error,
+                        text = "Visual editor needs a structurally-valid Screen JSON; fix decode errors first.",
                     )
                 } else {
                     VisualEditor(
@@ -383,44 +387,32 @@ private fun StatusStrip(
     unsaved: Boolean,
     decodeError: String?,
 ) {
-    Column(modifier = Modifier.fillMaxWidth()) {
+    Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
         when (saveStatus) {
             SaveStatus.Idle -> Unit
-            SaveStatus.Saving -> Text("Saving draft…")
+            SaveStatus.Saving -> InlineStatus(StatusKind.Accent, "Saving draft…")
             is SaveStatus.Saved ->
-                if (!unsaved) Text("Draft saved at ${saveStatus.updatedAt}.")
-            is SaveStatus.ValidationFailed -> Column {
-                Text(
-                    "Server rejected the draft:",
-                    color = MaterialTheme.colorScheme.error,
-                )
-                saveStatus.violations.forEach { v ->
-                    Text(text = " • $v", color = MaterialTheme.colorScheme.error)
-                }
-            }
-            is SaveStatus.Error -> Text(
-                text = "Save failed: ${saveStatus.message}",
-                color = MaterialTheme.colorScheme.error,
-            )
+                if (!unsaved) InlineStatus(StatusKind.Success, "Draft saved at ${saveStatus.updatedAt}.")
+            is SaveStatus.ValidationFailed -> ValidationBanner(violations = saveStatus.violations)
+            is SaveStatus.Error -> InlineStatus(StatusKind.Error, "Save failed: ${saveStatus.message}")
         }
         when (publishStatus) {
             PublishStatus.Idle -> Unit
-            PublishStatus.Publishing -> Text("Publishing…")
-            is PublishStatus.Published -> Text("Published v${publishStatus.version}.")
-            is PublishStatus.Error -> Text(
-                text = "Publish failed: ${publishStatus.message}",
-                color = MaterialTheme.colorScheme.error,
-            )
+            PublishStatus.Publishing -> InlineStatus(StatusKind.Accent, "Publishing…")
+            is PublishStatus.Published -> InlineStatus(StatusKind.Success, "Published v${publishStatus.version}.")
+            is PublishStatus.Error -> InlineStatus(StatusKind.Error, "Publish failed: ${publishStatus.message}")
         }
         if (decodeError != null) {
-            Text(
-                text = "JSON does not decode as Screen: $decodeError",
-                color = MaterialTheme.colorScheme.error,
-            )
+            InlineStatus(StatusKind.Error, "JSON does not decode as Screen: $decodeError")
         }
     }
 }
 
+/**
+ * The raw-JSON editing pane: a borderless [BasicTextField] on the code-well background with
+ * monospace text and an accent cursor. A real code editor (line numbers, highlighting) is a
+ * deliberate non-goal for now — the field is a faithful, fast plain-text surface.
+ */
 @Composable
 private fun JsonEditorPane(
     text: String,
@@ -428,21 +420,34 @@ private fun JsonEditorPane(
     decodeError: String?,
     modifier: Modifier = Modifier,
 ) {
-    Card(modifier = modifier) {
-        Column(modifier = Modifier.fillMaxSize().padding(12.dp)) {
-            Text(
-                text = if (decodeError == null) "Editor (Screen JSON)" else "Editor (decode error — preview is stale)",
-                style = MaterialTheme.typography.titleSmall,
-                color = if (decodeError == null) Color.Unspecified else MaterialTheme.colorScheme.error,
-            )
-            OutlinedTextField(
-                value = text,
-                onValueChange = onTextChange,
-                singleLine = false,
-                textStyle = TextStyle(fontFamily = FontFamily.Monospace),
-                modifier = Modifier.fillMaxSize().padding(top = 8.dp),
-            )
-        }
+    StudioPanel(
+        title = "SCREEN JSON",
+        contentPadding = 0.dp,
+        headerActions = {
+            if (decodeError == null) {
+                StatusChip(text = "Valid", kind = ChipKind.Success)
+            } else {
+                StatusChip(text = "Decode error", kind = ChipKind.Error)
+            }
+        },
+        modifier = modifier,
+    ) {
+        BasicTextField(
+            value = text,
+            onValueChange = onTextChange,
+            textStyle = TextStyle(
+                fontFamily = FontFamily.Monospace,
+                fontSize = CODE_FONT_SIZE,
+                lineHeight = CODE_LINE_HEIGHT,
+                color = MaterialTheme.colorScheme.onSurface,
+            ),
+            cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+            modifier = Modifier
+                .fillMaxSize()
+                .background(studioColors.codeBg)
+                .verticalScroll(rememberScrollState())
+                .padding(12.dp),
+        )
     }
 }
 
@@ -462,22 +467,40 @@ private fun PreviewPane(
             NativeSurfaces.register(this)
         }
     }
-    Card(modifier = modifier) {
-        Column(modifier = Modifier.fillMaxSize().padding(12.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(text = "Live preview", style = MaterialTheme.typography.titleSmall)
-                if (hasDecodeError) {
-                    Text(
-                        text = "  (showing last valid render)",
-                        color = MaterialTheme.colorScheme.error,
-                        modifier = Modifier.padding(start = 8.dp),
-                    )
-                }
+    var previewDark by remember { mutableStateOf(false) }
+    StudioPanel(
+        title = "PREVIEW",
+        contentPadding = 0.dp,
+        headerActions = {
+            if (hasDecodeError) {
+                StatusChip(text = "Stale", kind = ChipKind.Warning)
             }
-            Box(modifier = Modifier.fillMaxSize().padding(top = 8.dp)) {
-                if (screen == null) {
-                    Text("Type valid Screen JSON on the left to see a live preview.")
-                } else {
+            IconButton(onClick = { previewDark = !previewDark }, modifier = Modifier.size(PREVIEW_TOGGLE_SIZE)) {
+                Icon(
+                    imageVector = if (previewDark) StudioIcons.Sun else StudioIcons.Moon,
+                    contentDescription = if (previewDark) "Switch preview to light" else "Switch preview to dark",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(PREVIEW_TOGGLE_ICON_SIZE),
+                )
+            }
+        },
+        modifier = modifier,
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background)
+                .padding(12.dp),
+            contentAlignment = Alignment.TopCenter,
+        ) {
+            if (screen == null) {
+                EmptyState(
+                    title = "No preview yet",
+                    hint = "Type valid Screen JSON on the left to render a live preview.",
+                    icon = StudioIcons.Code,
+                )
+            } else {
+                DevicePreviewFrame(dark = previewDark) {
                     RenderScreen(screen = screen, registry = registry)
                 }
             }
@@ -533,34 +556,34 @@ private fun HistoryTab(
 
     Column(modifier = Modifier.fillMaxSize()) {
         when (val s = state) {
-            HistoryState.Loading -> Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center,
-            ) { CircularProgressIndicator() }
-            is HistoryState.Error -> Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center,
-            ) { Text("Could not load history: ${s.message}") }
+            HistoryState.Loading -> LoadingState(label = "Loading history…")
+            is HistoryState.Error -> ErrorState(message = "Could not load history: ${s.message}")
             is HistoryState.Ready -> if (s.versions.isEmpty()) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("No published versions yet.")
-                }
+                EmptyState(
+                    title = "No published versions yet",
+                    hint = "Publish a draft to create version 1.",
+                    icon = StudioIcons.Audit,
+                )
             } else {
-                Column(modifier = Modifier.fillMaxSize().padding(horizontal = 4.dp)) {
-                    Text(
-                        "Per-version JSON preview requires a server endpoint that doesn't yet " +
-                            "exist (GET /admin/screens/{id}/versions/{n}). Listed here for " +
-                            "now; preview lands once the server route is added.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(bottom = 8.dp),
+                Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    InlineStatus(
+                        kind = StatusKind.Neutral,
+                        text = "Per-version JSON preview requires a server endpoint that doesn't yet exist " +
+                            "(GET /admin/screens/{id}/versions/{n}); listed read-only for now.",
                     )
-                    s.versions.forEach { version ->
-                        VersionRow(
-                            version = version,
-                            isAdmin = isAdmin,
-                            onRevertClick = { revertTarget = version.version },
-                        )
+                    StudioPanel(contentPadding = 0.dp, modifier = Modifier.fillMaxWidth()) {
+                        Column {
+                            s.versions.forEachIndexed { index, version ->
+                                VersionRow(
+                                    version = version,
+                                    isAdmin = isAdmin,
+                                    onRevertClick = { revertTarget = version.version },
+                                )
+                                if (index != s.versions.lastIndex) {
+                                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -570,15 +593,22 @@ private fun HistoryTab(
     revertTarget?.let { target ->
         AlertDialog(
             onDismissRequest = { if (!revertInFlight) revertTarget = null },
+            icon = {
+                Icon(
+                    imageVector = StudioIcons.Audit,
+                    contentDescription = null,
+                    tint = studioColors.warning,
+                )
+            },
             title = { Text("Revert to v$target?") },
             text = {
-                Column {
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text(
                         "Reverting will create a new published version that copies the body from " +
                             "v$target. The current head is not deleted.",
                     )
                     revertError?.let {
-                        Text(text = it, color = MaterialTheme.colorScheme.error)
+                        InlineStatus(StatusKind.Error, it)
                     }
                 }
             },
@@ -634,21 +664,25 @@ private fun VersionRow(
     isAdmin: Boolean,
     onRevertClick: () -> Unit,
 ) {
-    Card(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(text = "v${version.version}", style = MaterialTheme.typography.titleSmall)
-                Text(
-                    text = "published: ${version.publishedAt ?: "—"}  •  by editor ${version.editorId}",
-                    style = MaterialTheme.typography.bodySmall,
-                )
-            }
-            if (isAdmin) {
-                OutlinedButton(onClick = onRevertClick) { Text("Revert") }
-            }
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        StatusChip(text = "v${version.version}", kind = ChipKind.Accent)
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = "published: ${version.publishedAt ?: "—"}",
+                style = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace),
+            )
+            Text(
+                text = "by editor ${version.editorId}",
+                style = MaterialTheme.typography.labelSmall.copy(fontFamily = FontFamily.Monospace),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        if (isAdmin) {
+            ToolbarOutlinedButton(text = "Revert", icon = StudioIcons.Audit, onClick = onRevertClick)
         }
     }
 }
@@ -675,3 +709,9 @@ private sealed interface HistoryState {
 }
 
 private const val LIVE_DECODE_DEBOUNCE_MS: Long = 200L
+private val CODE_FONT_SIZE = 13.sp
+private val CODE_LINE_HEIGHT = 19.sp
+private val TOOLBAR_SPINNER_SIZE = 16.dp
+private val TOOLBAR_SPINNER_STROKE = 2.dp
+private val PREVIEW_TOGGLE_SIZE = 26.dp
+private val PREVIEW_TOGGLE_ICON_SIZE = 14.dp
