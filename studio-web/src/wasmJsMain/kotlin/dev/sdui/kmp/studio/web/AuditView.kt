@@ -9,11 +9,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -24,10 +21,22 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import dev.sdui.kmp.studio.web.api.AuditEntry
 import dev.sdui.kmp.studio.web.api.StudioApi
+import dev.sdui.kmp.studio.web.components.ChipKind
+import dev.sdui.kmp.studio.web.components.EmptyState
+import dev.sdui.kmp.studio.web.components.ErrorState
+import dev.sdui.kmp.studio.web.components.LoadingState
+import dev.sdui.kmp.studio.web.components.StatusChip
+import dev.sdui.kmp.studio.web.components.StudioPanel
+import dev.sdui.kmp.studio.web.components.ToolbarButton
+import dev.sdui.kmp.studio.web.components.ToolbarOutlinedButton
+import dev.sdui.kmp.studio.web.components.ToolbarTextButton
+import dev.sdui.kmp.studio.web.components.studioFieldColors
 import dev.sdui.kmp.studio.web.export.downloadCsv
+import dev.sdui.kmp.studio.web.theme.StudioIcons
 
 /**
  * Filtered audit-log viewer.
@@ -71,8 +80,8 @@ public fun AuditView(api: StudioApi) {
         }
     }
 
-    Column(modifier = Modifier.fillMaxSize()) {
-        FiltersRow(
+    Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        FiltersPanel(
             screenId = screenId,
             onScreenIdChange = { screenId = it },
             editorId = editorId,
@@ -93,30 +102,31 @@ public fun AuditView(api: StudioApi) {
             entryCount = entries.size,
         )
         when {
-            loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
-            }
-            errorText != null -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(text = "Could not load audit log: $errorText")
-                    OutlinedButton(onClick = { loadTick += 1 }) { Text("Retry") }
+            loading -> LoadingState(label = "Loading audit log…")
+            errorText != null -> ErrorState(
+                message = "Could not load audit log: $errorText",
+                onRetry = { loadTick += 1 },
+            )
+            entries.isEmpty() -> EmptyState(
+                title = "No audit entries",
+                hint = "Nothing matches the current filters.",
+                icon = StudioIcons.Audit,
+            )
+            else -> StudioPanel(contentPadding = 0.dp, modifier = Modifier.fillMaxSize()) {
+                LazyColumn(modifier = Modifier.fillMaxSize()) {
+                    items(items = entries, key = { it.id }) { entry ->
+                        AuditRow(entry = entry)
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                    }
                 }
-            }
-            entries.isEmpty() -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("No audit entries match the current filters.")
-            }
-            else -> LazyColumn(
-                modifier = Modifier.fillMaxSize().padding(top = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(6.dp),
-            ) {
-                items(items = entries, key = { it.id }) { entry -> AuditRow(entry = entry) }
             }
         }
     }
 }
 
 @Composable
-private fun FiltersRow(
+@Suppress("LongMethod")
+private fun FiltersPanel(
     screenId: String,
     onScreenIdChange: (String) -> Unit,
     editorId: String,
@@ -130,14 +140,16 @@ private fun FiltersRow(
     onExport: () -> Unit,
     entryCount: Int,
 ) {
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    StudioPanel(title = "FILTERS", modifier = Modifier.fillMaxWidth()) {
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(
                     value = screenId,
                     onValueChange = onScreenIdChange,
                     label = { Text("Screen ID") },
                     singleLine = true,
+                    colors = studioFieldColors(),
+                    shape = MaterialTheme.shapes.small,
                     modifier = Modifier.weight(1f),
                 )
                 OutlinedTextField(
@@ -145,6 +157,8 @@ private fun FiltersRow(
                     onValueChange = onEditorIdChange,
                     label = { Text("Editor UUID") },
                     singleLine = true,
+                    colors = studioFieldColors(),
+                    shape = MaterialTheme.shapes.small,
                     modifier = Modifier.weight(1f),
                 )
             }
@@ -154,6 +168,8 @@ private fun FiltersRow(
                     onValueChange = onFromDateChange,
                     label = { Text("From (YYYY-MM-DD)") },
                     singleLine = true,
+                    colors = studioFieldColors(),
+                    shape = MaterialTheme.shapes.small,
                     modifier = Modifier.weight(1f),
                 )
                 OutlinedTextField(
@@ -161,50 +177,69 @@ private fun FiltersRow(
                     onValueChange = onToDateChange,
                     label = { Text("To (YYYY-MM-DD)") },
                     singleLine = true,
+                    colors = studioFieldColors(),
+                    shape = MaterialTheme.shapes.small,
                     modifier = Modifier.weight(1f),
                 )
             }
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Button(onClick = onApply) { Text("Apply filters") }
-                OutlinedButton(onClick = onClear, modifier = Modifier.padding(start = 8.dp)) {
-                    Text("Clear")
-                }
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                ToolbarButton(text = "Apply filters", onClick = onApply)
+                ToolbarTextButton(text = "Clear", onClick = onClear)
                 Box(modifier = Modifier.weight(1f))
                 Text(
                     text = "$entryCount entries",
-                    style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier.padding(end = 12.dp),
+                    style = MaterialTheme.typography.labelSmall.copy(fontFamily = FontFamily.Monospace),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(end = 4.dp),
                 )
-                OutlinedButton(onClick = onExport, enabled = entryCount > 0) { Text("Export CSV") }
+                ToolbarOutlinedButton(
+                    text = "Export CSV",
+                    icon = StudioIcons.Download,
+                    onClick = onExport,
+                    enabled = entryCount > 0,
+                )
             }
         }
     }
 }
 
+/**
+ * One divider-separated table-like row: action chip + screen id + version range on the first
+ * line; timestamp, editor, and request id as monospace metadata on the second.
+ */
 @Composable
 private fun AuditRow(entry: AuditEntry) {
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(12.dp)) {
-            Row {
-                Text(text = entry.at, style = MaterialTheme.typography.bodySmall)
+    Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            StatusChip(text = entry.action, kind = auditActionChipKind(entry.action))
+            Text(
+                text = "screen ${entry.screenId}",
+                style = MaterialTheme.typography.bodyMedium.copy(fontFamily = FontFamily.Monospace),
+            )
+            val range = versionRange(entry.fromVersion, entry.toVersion)
+            if (range.isNotEmpty()) {
                 Text(
-                    text = "  •  ${entry.editorId}",
+                    text = range.trim(),
                     style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier.padding(start = 8.dp),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-            Text(
-                text = "${entry.action} → screen ${entry.screenId}" +
-                    versionRange(entry.fromVersion, entry.toVersion),
-                modifier = Modifier.padding(top = 4.dp),
-            )
-            Text(
-                text = "request: ${entry.requestId}",
-                style = MaterialTheme.typography.bodySmall,
-                modifier = Modifier.padding(top = 2.dp),
-            )
         }
+        Text(
+            text = "${entry.at}  ·  ${entry.editorId}  ·  req ${entry.requestId}",
+            style = MaterialTheme.typography.labelSmall.copy(fontFamily = FontFamily.Monospace),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(top = 4.dp),
+        )
     }
+}
+
+/** publish → accent, revert/delete → warning/error, everything else neutral. */
+private fun auditActionChipKind(action: String): ChipKind = when (action.lowercase()) {
+    "publish" -> ChipKind.Accent
+    "revert" -> ChipKind.Warning
+    "delete" -> ChipKind.Error
+    else -> ChipKind.Neutral
 }
 
 private fun versionRange(from: Int?, to: Int?): String =
