@@ -7,9 +7,10 @@
     <link rel="stylesheet" href="styles.css" />
     <style>
       /* Inline reset so the page never flashes the OS default before styles.css loads. */
+      :root { color-scheme: dark; }
       html, body { margin: 0; padding: 0; height: 100%; }
       body {
-        background: #f4f5f7;
+        background: #0f1115;
         font-family:
           system-ui,
           -apple-system,
@@ -18,26 +19,54 @@
           "Helvetica Neue",
           Arial,
           sans-serif;
-        color: #1f2328;
+        color: #9ba3b1;
       }
       #root { height: 100%; }
-      /* Faint splash so the user sees something before the wasm bundle boots. */
+      /* Faint splash so the user sees something before the wasm bundle boots. Mirrors the
+         in-Compose BootSplash (logo mark + spinner + label) so the handoff is seamless. */
       #boot-splash {
         position: fixed;
         inset: 0;
         display: flex;
+        flex-direction: column;
+        gap: 12px;
         align-items: center;
         justify-content: center;
-        font-size: 14px;
-        color: #6e7781;
+        font-size: 12px;
+        color: #9ba3b1;
         pointer-events: none;
       }
+      .boot-logo {
+        width: 28px;
+        height: 28px;
+        border-radius: 6px;
+        background: #4c8dff;
+        color: #0a0e16;
+        font-weight: 700;
+        font-size: 15px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .boot-spinner {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        border: 2px solid #262c37;
+        border-top-color: #4c8dff;
+        animation: boot-spin 0.8s linear infinite;
+      }
+      @keyframes boot-spin { to { transform: rotate(360deg); } }
     </style>
     <script src="sdui-kmp-studio-web.js"></script>
   </head>
   <body>
     <div id="root">
-      <div id="boot-splash">Loading sdui-kmp Studio&hellip;</div>
+      <div id="boot-splash">
+        <div class="boot-logo">S</div>
+        <div class="boot-spinner"></div>
+        <div>Loading sdui-kmp Studio&hellip;</div>
+      </div>
     </div>
   </body>
 </html>
