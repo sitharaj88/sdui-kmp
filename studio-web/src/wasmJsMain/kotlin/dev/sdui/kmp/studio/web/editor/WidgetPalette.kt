@@ -1,95 +1,139 @@
 package dev.sdui.kmp.studio.web.editor
 
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Card
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.PointerIcon
+import androidx.compose.ui.input.pointer.pointerHoverIcon
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import dev.sdui.kmp.protocol.Action
-import dev.sdui.kmp.protocol.Button
-import dev.sdui.kmp.protocol.Destination
-import dev.sdui.kmp.protocol.NodeId
-import dev.sdui.kmp.protocol.SchemaVersion
 import dev.sdui.kmp.protocol.UiNode
-import dev.sdui.kmp.protocol.Value
-import kotlin.random.Random
-import dev.sdui.kmp.protocol.Column as ColumnNode
-import dev.sdui.kmp.protocol.Text as TextNode
+import dev.sdui.kmp.studio.web.components.studioFieldColors
+import dev.sdui.kmp.studio.web.theme.StudioIcons
 
 /**
- * Side panel listing the widget kinds an operator can spawn into the canvas.
+ * Side panel listing every widget kind an operator can spawn into the canvas, grouped by
+ * [WidgetCategory] with a name filter.
  *
- * Each entry is a button; clicking calls [onAdd] with a freshly-built [UiNode] of that type. The
- * caller decides whether to insert at root or under the selected container.
+ * Each entry is a compact card; clicking calls [onAdd] with a freshly-built [UiNode] of that
+ * type (the caller decides where it lands). Per ADR-0019 spawned nodes carry token-only
+ * defaults — no hex colours or pixel sizes exist anywhere in the catalog.
  *
- * Per ADR-0019 a token-only inspector means we cannot expose hex colours or pixel sizes here
- * either — every spawned node uses default token values.
+ * The optional [itemModifier] lets the workspace attach drag-source behaviour to every entry
+ * without this panel knowing about the drag machinery.
  */
 @Composable
-@Suppress("FunctionNaming")
-public fun WidgetPalette(
+internal fun WidgetPalette(
     onAdd: (UiNode) -> Unit,
     modifier: Modifier = Modifier,
+    itemModifier: (WidgetDescriptor) -> Modifier = { Modifier },
 ) {
-    Card(modifier = modifier) {
+    var filter by remember { mutableStateOf("") }
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        OutlinedTextField(
+            value = filter,
+            onValueChange = { filter = it },
+            placeholder = { Text("Filter widgets…", style = MaterialTheme.typography.bodySmall) },
+            leadingIcon = {
+                Icon(
+                    imageVector = StudioIcons.Search,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(FILTER_ICON_SIZE),
+                )
+            },
+            singleLine = true,
+            colors = studioFieldColors(),
+            shape = MaterialTheme.shapes.small,
+            textStyle = MaterialTheme.typography.bodySmall,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        val visible = DefaultWidgetPalette.filter {
+            filter.isBlank() || it.typeName.contains(filter.trim(), ignoreCase = true)
+        }
         Column(
-            modifier = Modifier.fillMaxWidth().padding(12.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+            modifier = Modifier.verticalScroll(rememberScrollState()),
         ) {
-            Text(
-                text = "Add widget",
-                style = MaterialTheme.typography.titleSmall,
-                modifier = Modifier.padding(bottom = 4.dp),
-            )
-            OutlinedButton(
-                onClick = { onAdd(newText()) },
-                modifier = Modifier.fillMaxWidth(),
-            ) { Text("Text") }
-            OutlinedButton(
-                onClick = { onAdd(newButton()) },
-                modifier = Modifier.fillMaxWidth(),
-            ) { Text("Button") }
-            OutlinedButton(
-                onClick = { onAdd(newColumn()) },
-                modifier = Modifier.fillMaxWidth(),
-            ) { Text("Column") }
+            WidgetCategory.entries.forEach { category ->
+                val entries = visible.filter { it.category == category }
+                if (entries.isEmpty()) return@forEach
+                Text(
+                    text = category.label.uppercase(),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 6.dp, bottom = 2.dp),
+                )
+                entries.forEach { descriptor ->
+                    PaletteEntry(
+                        descriptor = descriptor,
+                        onAdd = { onAdd(descriptor.factory()) },
+                        modifier = itemModifier(descriptor),
+                    )
+                }
+            }
         }
     }
 }
 
-/** Builds a fresh [TextNode] with placeholder content and a unique node id. */
-internal fun newText(): TextNode = TextNode(
-    id = freshNodeId("text"),
-    since = SchemaVersion.V1,
-    content = Value.ofString("New text"),
-)
+@Composable
+private fun PaletteEntry(
+    descriptor: WidgetDescriptor,
+    onAdd: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Surface(
+        shape = MaterialTheme.shapes.small,
+        color = MaterialTheme.colorScheme.surfaceContainer,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+        modifier = modifier
+            .fillMaxWidth()
+            .pointerHoverIcon(PointerIcon.Hand)
+            .clickable(onClick = onAdd),
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
+        ) {
+            Icon(
+                imageVector = descriptor.icon,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(ENTRY_ICON_SIZE),
+            )
+            Column {
+                Text(text = descriptor.typeName, style = MaterialTheme.typography.labelLarge)
+                Text(
+                    text = descriptor.description,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+        }
+    }
+}
 
-/** Builds a fresh [Button] with a no-op navigation action and a unique node id. */
-internal fun newButton(): Button = Button(
-    id = freshNodeId("button"),
-    since = SchemaVersion.V1,
-    label = Value.ofString("Button"),
-    action = Action.Navigate(destination = Destination.ScreenDest(route = "/")),
-)
-
-/** Builds a fresh empty [ColumnNode] with a unique node id. */
-internal fun newColumn(): ColumnNode = ColumnNode(
-    id = freshNodeId("column"),
-    since = SchemaVersion.V1,
-    children = emptyList(),
-)
-
-/**
- * Generates a node id that is unlikely to collide within a single editor session. The Studio
- * server validates uniqueness on save; collisions surface as decode-time validation errors.
- */
-internal fun freshNodeId(prefix: String): NodeId =
-    NodeId("$prefix-${Random.nextInt(0, Int.MAX_VALUE).toString(NODE_ID_RADIX)}")
-
-private const val NODE_ID_RADIX: Int = 36
+private val FILTER_ICON_SIZE = 14.dp
+private val ENTRY_ICON_SIZE = 16.dp
