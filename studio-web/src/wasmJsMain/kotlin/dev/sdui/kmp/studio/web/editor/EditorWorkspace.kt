@@ -41,6 +41,9 @@ internal class EditorWorkspaceState(val mutator: TreeMutator) {
     /** Window-rect registry for drop resolution and overlay drawing. */
     val dropRegistry: DropTargetRegistry = DropTargetRegistry()
 
+    /** Window-rect registry for layers-panel rows (a separate drop zone from the canvas). */
+    val layersRegistry: DropTargetRegistry = DropTargetRegistry()
+
     /** Layers-panel expansion state, keyed by the path's string form. Missing = expanded. */
     val expandedLayers: SnapshotStateMap<String, Boolean> = mutableStateMapOf()
 
@@ -65,6 +68,56 @@ internal class EditorWorkspaceState(val mutator: TreeMutator) {
 
     /** True while [path] is hovered and no drag is running (drags own the highlight). */
     fun isHoverHighlighted(path: TreePath): Boolean = hovered == path && !dragState.isDragging
+
+    /**
+     * Re-resolves the active drop location for the pointer's current window position, first
+     * against the canvas containers, then against the layers rows.
+     */
+    fun updateDragTarget() {
+        val draggedPath = (dragState.payload as? DragPayload.ExistingNode)?.path
+        val pointer = dragState.pointerInWindow
+        dragState.active = resolveDropLocation(pointer, dropRegistry.snapshot(), draggedPath)
+            ?: resolveLayersDrop(pointer, layersRegistry.snapshot(), draggedPath)
+    }
+
+    /**
+     * Commits the active drop (palette spawn → [insertingChildAt]; canvas/layers move →
+     * [movingNode], whose [adjustedDestination] rule also yields the node's post-move
+     * selection path) and clears the drag session either way.
+     */
+    fun completeDrag() {
+        val payload = dragState.payload
+        val location = dragState.active
+        if (payload != null && location != null) {
+            when (payload) {
+                is DragPayload.NewNode -> {
+                    val updated = mutator.current.insertingChildAt(
+                        location.container,
+                        location.index,
+                        payload.descriptor.factory(),
+                    )
+                    if (updated != null) {
+                        commit(updated)
+                        selection = location.container + location.index
+                    }
+                }
+                is DragPayload.ExistingNode -> {
+                    val updated = mutator.current.movingNode(
+                        from = payload.path,
+                        toContainer = location.container,
+                        index = location.index,
+                    )
+                    if (updated != null && updated != mutator.current) {
+                        commit(updated)
+                        val (adjustedPath, adjustedIndex) =
+                            adjustedDestination(payload.path, location.container, location.index)
+                        selection = adjustedPath + adjustedIndex
+                    }
+                }
+            }
+        }
+        dragState.clear()
+    }
 }
 
 private const val PHONE_WIDTH_DP = 390

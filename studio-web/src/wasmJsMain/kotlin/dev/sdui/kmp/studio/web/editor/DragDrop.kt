@@ -131,5 +131,44 @@ internal fun resolveDropLocation(
     return DropLocation(container = winner.path, index = index, indicatorBounds = indicator)
 }
 
+/**
+ * Drop resolution for the layers panel: rows are a flat vertical list, so the gap above or
+ * below the row under the pointer maps directly to `(parent, index)` — no container
+ * hit-testing needed. The root row (empty path) is skipped; cycle rules are enforced by
+ * excluding rows inside the dragged subtree, and again by `movingNode` (defence in depth).
+ */
+@Suppress("ReturnCount")
+internal fun resolveLayersDrop(
+    pointer: Offset,
+    rows: List<RegisteredNode>,
+    draggedPath: TreePath?,
+): DropLocation? {
+    val candidates = rows
+        .filter { it.path.isNotEmpty() }
+        .filter { draggedPath == null || !it.path.isSelfOrDescendantOf(draggedPath) }
+        .sortedBy { it.bounds.top }
+    if (candidates.isEmpty()) return null
+    val panelLeft = candidates.minOf { it.bounds.left }
+    val panelRight = candidates.maxOf { it.bounds.right }
+    if (pointer.x < panelLeft || pointer.x > panelRight) return null
+    if (pointer.y < candidates.first().bounds.top || pointer.y > candidates.last().bounds.bottom) return null
+
+    val row = candidates.lastOrNull { it.bounds.top <= pointer.y } ?: candidates.first()
+    val before = pointer.y <= row.bounds.center.y
+    val parent = row.path.dropLast(1)
+    val index = if (before) row.path.last() else row.path.last() + 1
+    val lineY = if (before) row.bounds.top else row.bounds.bottom
+    return DropLocation(
+        container = parent,
+        index = index,
+        indicatorBounds = Rect(
+            left = row.bounds.left,
+            top = lineY - DROP_INDICATOR_HALF_THICKNESS,
+            right = row.bounds.right,
+            bottom = lineY + DROP_INDICATOR_HALF_THICKNESS,
+        ),
+    )
+}
+
 private const val DROP_INDICATOR_INSET = 6f
 private const val DROP_INDICATOR_HALF_THICKNESS = 1.5f

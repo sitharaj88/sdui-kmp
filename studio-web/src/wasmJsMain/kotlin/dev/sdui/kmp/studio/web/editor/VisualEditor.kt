@@ -1,5 +1,6 @@
 package dev.sdui.kmp.studio.web.editor
 
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -21,7 +22,11 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.boundsInWindow
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.unit.dp
 import dev.sdui.kmp.protocol.Container
 import dev.sdui.kmp.protocol.Screen
@@ -84,8 +89,12 @@ public fun VisualEditor(
                     title = "WIDGETS",
                     modifier = Modifier.weight(PALETTE_WEIGHT).fillMaxWidth(),
                 ) {
+                    val paletteOrigins = remember { mutableMapOf<String, Offset>() }
                     WidgetPalette(
                         onAdd = { node -> workspace.insertFromPalette(node) },
+                        itemModifier = { descriptor ->
+                            paletteDragSource(workspace, descriptor, paletteOrigins)
+                        },
                         modifier = Modifier.fillMaxSize(),
                     )
                 }
@@ -186,6 +195,33 @@ private fun ToolbarIconButton(
         )
     }
 }
+
+/**
+ * Drag-source behaviour for one palette entry: dragging spawns a [DragPayload.NewNode]
+ * session resolved against the canvas/layers drop zones. Taps still insert via the palette's
+ * own click handling — drag slop keeps the two gestures apart.
+ */
+private fun paletteDragSource(
+    workspace: EditorWorkspaceState,
+    descriptor: WidgetDescriptor,
+    origins: MutableMap<String, Offset>,
+): Modifier = Modifier
+    .onGloballyPositioned { origins[descriptor.typeName] = it.boundsInWindow().topLeft }
+    .pointerInput(descriptor.typeName) {
+        detectDragGestures(
+            onDragStart = { offset ->
+                workspace.dragState.payload = DragPayload.NewNode(descriptor)
+                workspace.dragState.pointerInWindow = (origins[descriptor.typeName] ?: Offset.Zero) + offset
+            },
+            onDrag = { change, amount ->
+                change.consume()
+                workspace.dragState.pointerInWindow += amount
+                workspace.updateDragTarget()
+            },
+            onDragEnd = { workspace.completeDrag() },
+            onDragCancel = { workspace.dragState.clear() },
+        )
+    }
 
 /**
  * Inserts a palette-spawned [node]: into the selected container, after the selected leaf, or

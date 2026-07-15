@@ -1,5 +1,6 @@
 package dev.sdui.kmp.studio.web.editor
 
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.hoverable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -14,6 +15,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
@@ -104,6 +106,26 @@ internal fun NodeChrome(
             .hoverable(interactions)
             .pointerInput(path) {
                 detectTapGestures(onTap = { workspace.selection = path })
+            }
+            .pointerInput(path) {
+                // Drag slop distinguishes this from the tap gesture above. Non-root nodes
+                // only — the root Column cannot be moved.
+                if (path.isEmpty()) return@pointerInput
+                detectDragGestures(
+                    onDragStart = { offset ->
+                        val origin = workspace.dropRegistry.boundsOf(path)?.topLeft ?: Offset.Zero
+                        workspace.dragState.payload = DragPayload.ExistingNode(path)
+                        workspace.dragState.pointerInWindow = origin + offset
+                        workspace.selection = path
+                    },
+                    onDrag = { change, amount ->
+                        change.consume()
+                        workspace.dragState.pointerInWindow += amount
+                        workspace.updateDragTarget()
+                    },
+                    onDragEnd = { workspace.completeDrag() },
+                    onDragCancel = { workspace.dragState.clear() },
+                )
             }
             .drawWithContent {
                 if (isDropTarget) {

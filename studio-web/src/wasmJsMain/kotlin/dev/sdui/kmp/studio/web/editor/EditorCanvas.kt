@@ -60,19 +60,22 @@ internal fun EditorCanvas(
         dropTargetFill = MaterialTheme.colorScheme.primary.copy(alpha = DROP_FILL_ALPHA),
         placeholderText = MaterialTheme.colorScheme.onSurfaceVariant,
     )
-    var canvasOrigin by remember { mutableStateOf(Offset.Zero) }
+    var canvasBounds by remember { mutableStateOf(androidx.compose.ui.geometry.Rect.Zero) }
+    val canvasOrigin = canvasBounds.topLeft
 
     Box(
         modifier = modifier
             .background(MaterialTheme.colorScheme.background)
-            .onGloballyPositioned { canvasOrigin = it.boundsInWindow().topLeft }
+            .onGloballyPositioned { canvasBounds = it.boundsInWindow() }
             .pointerInput(Unit) {
                 detectTapGestures(onTap = { workspace.selection = null })
             }
             .drawBehind {
                 // Drop indicator: a 2px accent gap line, drawn under the frame's overlay
-                // coordinates (window → local via canvasOrigin).
+                // coordinates (window → local via canvasOrigin). Skipped when the active
+                // location belongs to the layers zone — that panel draws its own line.
                 val location = workspace.dragState.active ?: return@drawBehind
+                if (!canvasBounds.overlaps(location.indicatorBounds)) return@drawBehind
                 val rect = location.indicatorBounds.translate(-canvasOrigin)
                 drawLine(
                     color = chrome.selection,

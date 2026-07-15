@@ -2,6 +2,7 @@ package dev.sdui.kmp.studio.web.editor
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.hoverable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
@@ -20,11 +21,18 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.boundsInWindow
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import dev.sdui.kmp.protocol.AsyncImage
@@ -57,7 +65,25 @@ internal fun LayersPanel(
     workspace: EditorWorkspaceState,
     modifier: Modifier = Modifier,
 ) {
-    Column(modifier = modifier.verticalScroll(rememberScrollState())) {
+    var panelBounds by remember { mutableStateOf(androidx.compose.ui.geometry.Rect.Zero) }
+    val indicatorColor = MaterialTheme.colorScheme.primary
+    Column(
+        modifier = modifier
+            .onGloballyPositioned { panelBounds = it.boundsInWindow() }
+            .drawBehind {
+                // Drop indicator for layers-zone drops; window → local via the panel origin.
+                val location = workspace.dragState.active ?: return@drawBehind
+                if (!panelBounds.overlaps(location.indicatorBounds)) return@drawBehind
+                val rect = location.indicatorBounds.translate(-panelBounds.topLeft)
+                drawLine(
+                    color = indicatorColor,
+                    start = androidx.compose.ui.geometry.Offset(rect.left, rect.center.y),
+                    end = androidx.compose.ui.geometry.Offset(rect.right, rect.center.y),
+                    strokeWidth = INDICATOR_STROKE_PX,
+                )
+            }
+            .verticalScroll(rememberScrollState()),
+    ) {
         LayerRow(node = workspace.mutator.current, path = emptyList(), depth = 0, workspace = workspace)
     }
 }
@@ -83,6 +109,9 @@ private fun LayerRow(
     }
     val isSelected = workspace.isSelected(path)
     val isHighlighted = isSelected || workspace.isHoverHighlighted(path)
+    DisposableEffect(path) {
+        onDispose { workspace.layersRegistry.unregister(path) }
+    }
 
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -97,8 +126,30 @@ private fun LayerRow(
                 },
                 MaterialTheme.shapes.extraSmall,
             )
+            .onGloballyPositioned { coords ->
+                workspace.layersRegistry.register(path, node is Container, coords.boundsInWindow())
+            }
             .hoverable(interactions)
             .clickable { workspace.selection = path }
+            .pointerInput(path) {
+                if (path.isEmpty()) return@pointerInput
+                detectDragGestures(
+                    onDragStart = { offset ->
+                        val origin = workspace.layersRegistry.boundsOf(path)?.topLeft
+                            ?: androidx.compose.ui.geometry.Offset.Zero
+                        workspace.dragState.payload = DragPayload.ExistingNode(path)
+                        workspace.dragState.pointerInWindow = origin + offset
+                        workspace.selection = path
+                    },
+                    onDrag = { change, amount ->
+                        change.consume()
+                        workspace.dragState.pointerInWindow += amount
+                        workspace.updateDragTarget()
+                    },
+                    onDragEnd = { workspace.completeDrag() },
+                    onDragCancel = { workspace.dragState.clear() },
+                )
+            }
             .padding(start = (depth * INDENT_DP).dp),
     ) {
         if (node is Container) {
@@ -260,6 +311,7 @@ internal fun UiNode.withFreshIds(): UiNode = when (this) {
 }
 
 private val ROW_HEIGHT = 26.dp
+private const val INDICATOR_STROKE_PX = 2f
 private const val INDENT_DP = 12
 private const val SLOT_EXTRA_INDENT = 20
 private val CHEVRON_BUTTON_SIZE = 20.dp
