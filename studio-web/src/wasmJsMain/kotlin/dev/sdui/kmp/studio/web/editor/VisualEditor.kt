@@ -76,14 +76,26 @@ public fun VisualEditor(
             modifier = Modifier.fillMaxSize().padding(top = 8.dp),
             horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            StudioPanel(
-                title = "WIDGETS",
+            Column(
+                verticalArrangement = Arrangement.spacedBy(10.dp),
                 modifier = Modifier.width(PALETTE_WIDTH).fillMaxHeight(),
             ) {
-                WidgetPalette(
-                    onAdd = { node -> workspace.insertFromPalette(node) },
-                    modifier = Modifier.fillMaxSize(),
-                )
+                StudioPanel(
+                    title = "WIDGETS",
+                    modifier = Modifier.weight(PALETTE_WEIGHT).fillMaxWidth(),
+                ) {
+                    WidgetPalette(
+                        onAdd = { node -> workspace.insertFromPalette(node) },
+                        modifier = Modifier.fillMaxSize(),
+                    )
+                }
+                StudioPanel(
+                    title = "LAYERS",
+                    contentPadding = 6.dp,
+                    modifier = Modifier.weight(LAYERS_WEIGHT).fillMaxWidth(),
+                ) {
+                    LayersPanel(workspace = workspace, modifier = Modifier.fillMaxSize())
+                }
             }
             EditorCanvas(
                 workspace = workspace,
@@ -216,6 +228,8 @@ internal fun EditorWorkspaceState.deleteSelection() {
 
 private val PALETTE_WIDTH = 260.dp
 private val INSPECTOR_WIDTH = 320.dp
+private const val PALETTE_WEIGHT = 0.55f
+private const val LAYERS_WEIGHT = 0.45f
 private val TOOLBAR_ICON_BUTTON_SIZE = 32.dp
 private val TOOLBAR_ICON_SIZE = 16.dp
 private const val DISABLED_ICON_ALPHA = 0.4f
