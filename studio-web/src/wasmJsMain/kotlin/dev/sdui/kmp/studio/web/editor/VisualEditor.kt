@@ -1,38 +1,49 @@
 package dev.sdui.kmp.studio.web.editor
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
+import dev.sdui.kmp.protocol.Container
 import dev.sdui.kmp.protocol.Screen
+import dev.sdui.kmp.protocol.UiNode
+import dev.sdui.kmp.studio.web.components.SegmentOption
+import dev.sdui.kmp.studio.web.components.SegmentedControl
+import dev.sdui.kmp.studio.web.components.StudioPanel
+import dev.sdui.kmp.studio.web.components.ToolbarButton
+import dev.sdui.kmp.studio.web.theme.StudioIcons
 
 /**
  * Top-level visual editor surface used by the Editor tab in `ScreenDetailView`.
  *
- * The component owns:
- *  * a [TreeMutator] keyed by [screen]'s id, seeded from the screen's root,
- *  * the current selection path (or `null`),
- *  * an "Apply to JSON" button that re-encodes the mutator's tree into [onScreenChange].
+ * Layout: toolbar (undo/redo, canvas width presets, delete, "Apply to JSON") over three
+ * panels — a fixed left rail (widget palette above the layers panel), the WYSIWYG
+ * [EditorCanvas] filling the center, and the property inspector on the right. Fixed-dp side
+ * panels keep the drop-registry geometry stable during drags.
  *
- * Per the task brief we DO NOT auto-encode the tree on every mutation — that surprised the
- * previous agent's feedback loop. Operators see local changes immediately on the canvas, and
- * push them back to the JSON pane explicitly.
+ * The component owns an [EditorWorkspaceState] keyed by [screen]'s id, seeded from the
+ * screen's root. Per the original task brief we DO NOT auto-encode the tree on every
+ * mutation — operators see local changes immediately on the canvas and push them back to the
+ * JSON pane explicitly via "Apply to JSON".
  */
 @Composable
 @Suppress("FunctionNaming", "LongMethod")
@@ -41,81 +52,187 @@ public fun VisualEditor(
     onScreenChange: (Screen) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val mutator = remember(screen.id) { TreeMutator(initial = screen.root) }
+    val workspace = remember(screen.id) { EditorWorkspaceState(TreeMutator(initial = screen.root)) }
     LaunchedEffect(screen.root) {
-        // If the JSON pane edits the tree out from under us we re-seed without losing the
-        // selection. Cheap because reset is O(1) — it just resets the history stack.
-        if (mutator.current !== screen.root) {
-            mutator.reset(screen.root)
+        // If the JSON pane edits the tree out from under us we re-seed. Structural (not
+        // reference) equality matters here: "Apply to JSON" round-trips the tree through the
+        // debounced decoder, which produces an equal-but-new instance — resetting on `!==`
+        // would wipe the undo history on every Apply.
+        if (workspace.mutator.current != screen.root) {
+            workspace.mutator.reset(screen.root)
+            workspace.dropRegistry.clear()
+            workspace.normalizeSelection()
         }
     }
-    var selected by remember(screen.id) { mutableStateOf<TreePath?>(null) }
-    val current = mutator.current
-    val selectedNode = selected?.let { current.childAt(it) }
+    val current = workspace.mutator.current
+    val selectedNode = workspace.selection?.let { current.childAt(it) }
 
     Column(modifier = modifier.fillMaxSize()) {
+        EditorToolbar(
+            workspace = workspace,
+            onApply = { onScreenChange(screen.copy(root = workspace.mutator.current)) },
+        )
         Row(
-            modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.fillMaxSize().padding(top = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            Text(
-                text = "Visual editor",
-                style = MaterialTheme.typography.titleSmall,
-                modifier = Modifier.padding(end = 8.dp),
-            )
-            OutlinedButton(onClick = { mutator.undo() }, enabled = mutator.canUndo) {
-                Text("Undo")
+            StudioPanel(
+                title = "WIDGETS",
+                modifier = Modifier.width(PALETTE_WIDTH).fillMaxHeight(),
+            ) {
+                WidgetPalette(
+                    onAdd = { node -> workspace.insertFromPalette(node) },
+                    modifier = Modifier.fillMaxSize(),
+                )
             }
-            OutlinedButton(onClick = { mutator.redo() }, enabled = mutator.canRedo) {
-                Text("Redo")
-            }
-            Button(
-                onClick = { onScreenChange(screen.copy(root = mutator.current)) },
-            ) { Text("Apply to JSON") }
-        }
-        Row(
-            modifier = Modifier.fillMaxSize(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            WidgetPalette(
-                onAdd = { node ->
-                    val target = selected ?: emptyList()
-                    val updated = mutator.current.insertingChild(target, node)
-                    if (updated != null) mutator.replace(updated)
-                },
-                modifier = Modifier.weight(WEIGHT_PALETTE).fillMaxHeight(),
-            )
             EditorCanvas(
-                root = mutator.current,
-                selected = selected,
-                onSelect = { selected = it },
-                onAddChild = { path ->
-                    val updated = mutator.current.insertingChild(path, newText())
-                    if (updated != null) mutator.replace(updated)
-                },
-                onRemove = { path ->
-                    val updated = mutator.current.removingAt(path)
-                    if (updated != null) {
-                        mutator.replace(updated)
-                        if (selected == path) selected = null
-                    }
-                },
-                modifier = Modifier.weight(WEIGHT_CANVAS).fillMaxHeight(),
+                workspace = workspace,
+                modifier = Modifier.weight(1f).fillMaxHeight(),
             )
-            PropertyInspector(
-                selected = selectedNode,
-                onChange = { replacement ->
-                    val path = selected ?: return@PropertyInspector
-                    val updated = mutator.current.replacingAt(path, replacement)
-                    if (updated != null) mutator.replace(updated)
-                },
-                modifier = Modifier.weight(WEIGHT_INSPECTOR).fillMaxHeight(),
-            )
+            StudioPanel(
+                title = "INSPECTOR",
+                modifier = Modifier.width(INSPECTOR_WIDTH).fillMaxHeight(),
+            ) {
+                Box(Modifier.verticalScroll(rememberScrollState())) {
+                    PropertyInspector(
+                        selected = selectedNode,
+                        onChange = { replacement ->
+                            val path = workspace.selection ?: return@PropertyInspector
+                            val updated = workspace.mutator.current.replacingAt(path, replacement)
+                            if (updated != null) workspace.commit(updated)
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+            }
         }
     }
 }
 
-private const val WEIGHT_PALETTE: Float = 1f
-private const val WEIGHT_CANVAS: Float = 2f
-private const val WEIGHT_INSPECTOR: Float = 1.5f
+@Composable
+private fun EditorToolbar(
+    workspace: EditorWorkspaceState,
+    onApply: () -> Unit,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        ToolbarIconButton(
+            icon = StudioIcons.Undo,
+            description = "Undo",
+            enabled = workspace.mutator.canUndo,
+            onClick = {
+                workspace.mutator.undo()
+                workspace.normalizeSelection()
+            },
+        )
+        ToolbarIconButton(
+            icon = StudioIcons.Redo,
+            description = "Redo",
+            enabled = workspace.mutator.canRedo,
+            onClick = {
+                workspace.mutator.redo()
+                workspace.normalizeSelection()
+            },
+        )
+        SegmentedControl(
+            options = CanvasWidthPreset.entries.map { SegmentOption(label = it.label) },
+            selectedIndex = workspace.canvasWidth.ordinal,
+            onSelect = { workspace.canvasWidth = CanvasWidthPreset.entries[it] },
+            modifier = Modifier.padding(start = 6.dp),
+        )
+        Box(Modifier.weight(1f))
+        ToolbarIconButton(
+            icon = StudioIcons.Delete,
+            description = "Delete selected node",
+            enabled = workspace.selection?.isNotEmpty() == true,
+            onClick = { workspace.deleteSelection() },
+        )
+        ToolbarButton(text = "Apply to JSON", onClick = onApply)
+    }
+}
+
+@Composable
+private fun ToolbarIconButton(
+    icon: ImageVector,
+    description: String,
+    enabled: Boolean,
+    onClick: () -> Unit,
+) {
+    IconButton(onClick = onClick, enabled = enabled, modifier = Modifier.size(TOOLBAR_ICON_BUTTON_SIZE)) {
+        Icon(
+            imageVector = icon,
+            contentDescription = description,
+            tint = if (enabled) {
+                MaterialTheme.colorScheme.onSurface
+            } else {
+                MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = DISABLED_ICON_ALPHA)
+            },
+            modifier = Modifier.size(TOOLBAR_ICON_SIZE),
+        )
+    }
+}
+
+/**
+ * Inserts a palette-spawned [node]: into the selected container, after the selected leaf, or
+ * appended to the root. The new node becomes the selection so the inspector opens on it.
+ */
+internal fun EditorWorkspaceState.insertFromPalette(node: UiNode) {
+    val root = mutator.current
+    val selectedPath = selection
+    val selectedNode = selectedPath?.let { root.childAt(it) }
+    val (updated, newPath) = when {
+        selectedPath != null && selectedNode is Container -> {
+            val index = selectedNode.children.size
+            root.insertingChildAt(selectedPath, index, node) to (selectedPath + index)
+        }
+        selectedPath != null && selectedPath.isNotEmpty() -> {
+            val parent = selectedPath.dropLast(1)
+            val index = selectedPath.last() + 1
+            root.insertingChildAt(parent, index, node) to (parent + index)
+        }
+        else -> {
+            val rootContainer = root as? Container
+            val index = rootContainer?.children?.size ?: 0
+            root.insertingChildAt(emptyList(), index, node) to listOf(index)
+        }
+    }
+    if (updated != null) {
+        commit(updated)
+        selection = newPath
+    }
+}
+
+/** Removes the selected node (root is not deletable) and clears the selection. */
+internal fun EditorWorkspaceState.deleteSelection() {
+    val path = selection ?: return
+    if (path.isEmpty()) return
+    val updated = mutator.current.removingAt(path) ?: return
+    commit(updated)
+    selection = null
+}
+
+private val PALETTE_WIDTH = 260.dp
+private val INSPECTOR_WIDTH = 320.dp
+private val TOOLBAR_ICON_BUTTON_SIZE = 32.dp
+private val TOOLBAR_ICON_SIZE = 16.dp
+private const val DISABLED_ICON_ALPHA = 0.4f
+
+/**
+ * Human-readable one-line summary of [node] shared by the layers panel and overlays.
+ */
+internal fun describeNode(node: UiNode): String {
+    val typeName = node::class.simpleName ?: "Node"
+    val suffix = when (node) {
+        is dev.sdui.kmp.protocol.Text -> previewText(node.content).displayString().takeIf { it.isNotEmpty() }
+            ?.let { " \"${it.take(SUMMARY_MAX)}\"" }.orEmpty()
+        is dev.sdui.kmp.protocol.Button -> previewText(node.label).displayString().takeIf { it.isNotEmpty() }
+            ?.let { " [${it.take(SUMMARY_MAX)}]" }.orEmpty()
+        else -> ""
+    }
+    return "$typeName$suffix"
+}
+
+private const val SUMMARY_MAX = 24

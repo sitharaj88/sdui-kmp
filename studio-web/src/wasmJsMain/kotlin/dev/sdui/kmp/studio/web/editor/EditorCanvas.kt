@@ -1,161 +1,206 @@
 package dev.sdui.kmp.studio.web.editor
 
-import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Shapes
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
+import androidx.compose.material3.Typography
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.boundsInWindow
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
-import dev.sdui.kmp.protocol.Container
-import dev.sdui.kmp.protocol.UiNode
-import dev.sdui.kmp.protocol.Value
-import dev.sdui.kmp.protocol.Button as ButtonNode
-import dev.sdui.kmp.protocol.Text as TextNode
+import kotlin.math.roundToInt
 
 /**
- * Click-to-select tree visualisation for the visual editor.
+ * The WYSIWYG canvas: a dark backdrop holding a centered "device" frame that renders the
+ * workspace's current tree through the inert [CanvasNode] renderers, plus an overlay layer
+ * for editor chrome that must not affect layout (selection label tag, drop indicator line,
+ * drag ghost).
  *
- * The canvas walks the [TreeMutator]'s current root and renders one [Card] per node, indented by
- * depth. It does NOT use `SduiHost`: per ADR-0019 the editor must not fire actions or mutate
- * state — a hand-written renderer is simpler than threading mock dispatchers through the
- * production renderer.
+ * The device frame nests a **stock light Material3 theme** so token-styled facsimiles look
+ * like production clients (same rationale as the JSON tab's DevicePreviewFrame). Editor
+ * chrome colors are captured from the Studio theme *before* nesting via [LocalChromeColors].
  *
- * Selection is reported via [onSelect]. Containers expose an "Add child" button that delegates
- * back to the caller via [onAddChild]; this avoids the canvas knowing what kind of widget the
- * palette intends to spawn.
+ * Tapping the backdrop clears the selection; taps on nodes are consumed by the innermost
+ * [NodeChrome] before they reach here.
  */
 @Composable
-@Suppress("FunctionNaming")
-public fun EditorCanvas(
-    root: UiNode,
-    selected: TreePath?,
-    onSelect: (TreePath?) -> Unit,
-    onAddChild: (TreePath) -> Unit,
-    onRemove: (TreePath) -> Unit,
+internal fun EditorCanvas(
+    workspace: EditorWorkspaceState,
     modifier: Modifier = Modifier,
 ) {
-    Card(modifier = modifier) {
-        Column(
-            modifier = Modifier.fillMaxSize().padding(12.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp),
-        ) {
-            Row(modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
-                Text(text = "Canvas", style = MaterialTheme.typography.titleSmall)
-                Box(modifier = Modifier.padding(start = 8.dp))
-                if (selected != null) {
-                    TextButton(onClick = { onSelect(null) }) { Text("Clear selection") }
-                }
+    val chrome = ChromeColors(
+        selection = MaterialTheme.colorScheme.primary,
+        hover = MaterialTheme.colorScheme.outline,
+        dropTargetFill = MaterialTheme.colorScheme.primary.copy(alpha = DROP_FILL_ALPHA),
+        placeholderText = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+    var canvasOrigin by remember { mutableStateOf(Offset.Zero) }
+
+    Box(
+        modifier = modifier
+            .background(MaterialTheme.colorScheme.background)
+            .onGloballyPositioned { canvasOrigin = it.boundsInWindow().topLeft }
+            .pointerInput(Unit) {
+                detectTapGestures(onTap = { workspace.selection = null })
             }
-            NodeRow(
-                node = root,
-                path = emptyList(),
-                depth = 0,
-                selected = selected,
-                onSelect = onSelect,
-                onAddChild = onAddChild,
-                onRemove = onRemove,
-            )
+            .drawBehind {
+                // Drop indicator: a 2px accent gap line, drawn under the frame's overlay
+                // coordinates (window → local via canvasOrigin).
+                val location = workspace.dragState.active ?: return@drawBehind
+                val rect = location.indicatorBounds.translate(-canvasOrigin)
+                drawLine(
+                    color = chrome.selection,
+                    start = Offset(rect.left, rect.center.y),
+                    end = Offset(rect.right, rect.center.y),
+                    strokeWidth = DROP_LINE_STROKE_PX,
+                )
+                drawCircle(color = chrome.selection, radius = DROP_LINE_DOT_RADIUS_PX, center = rect.centerLeft)
+                drawCircle(color = chrome.selection, radius = DROP_LINE_DOT_RADIUS_PX, center = rect.centerRight)
+            },
+        contentAlignment = Alignment.TopCenter,
+    ) {
+        CompositionLocalProvider(LocalChromeColors provides chrome) {
+            DeviceFrame(workspace = workspace)
+            SelectionLabel(workspace = workspace, canvasOrigin = canvasOrigin, chrome = chrome)
+            DragGhost(workspace = workspace, canvasOrigin = canvasOrigin, chrome = chrome)
         }
     }
 }
 
 @Composable
-@Suppress("FunctionNaming")
-private fun NodeRow(
-    node: UiNode,
-    path: TreePath,
-    depth: Int,
-    selected: TreePath?,
-    onSelect: (TreePath?) -> Unit,
-    onAddChild: (TreePath) -> Unit,
-    onRemove: (TreePath) -> Unit,
-) {
-    val isSelected = selected == path
-    val highlight = if (isSelected) {
-        MaterialTheme.colorScheme.secondaryContainer
-    } else {
-        MaterialTheme.colorScheme.surfaceVariant
-    }
-    Card(
-        colors = CardDefaults.cardColors(containerColor = highlight),
-        shape = RoundedCornerShape(6.dp),
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(start = (depth * INDENT_DP).dp),
+private fun DeviceFrame(workspace: EditorWorkspaceState) {
+    val hairline = MaterialTheme.colorScheme.outlineVariant
+    val widthModifier = workspace.canvasWidth.dp
+        ?.let { Modifier.width(it.dp) }
+        ?: Modifier.fillMaxWidth()
+    MaterialTheme(
+        colorScheme = lightColorScheme(),
+        typography = Typography(),
+        shapes = Shapes(),
     ) {
-        Column(modifier = Modifier.padding(8.dp)) {
-            Row(modifier = Modifier.fillMaxWidth()) {
-                Text(
-                    text = describe(node),
-                    style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.padding(end = 8.dp),
+        Surface(
+            shape = RoundedCornerShape(DEVICE_CORNER_RADIUS),
+            border = BorderStroke(1.dp, hairline),
+            color = MaterialTheme.colorScheme.background,
+            modifier = widthModifier.padding(vertical = FRAME_V_MARGIN),
+        ) {
+            Box(
+                modifier = Modifier
+                    .verticalScroll(rememberScrollState())
+                    .padding(DEVICE_CONTENT_PADDING),
+            ) {
+                CanvasNode(
+                    node = workspace.mutator.current,
+                    path = emptyList(),
+                    workspace = workspace,
                 )
-                Box(modifier = Modifier.padding(start = 8.dp))
-                TextButton(onClick = { onSelect(path) }) {
-                    Text(if (isSelected) "Selected" else "Select")
-                }
-                if (node is Container) {
-                    OutlinedButton(
-                        onClick = { onAddChild(path) },
-                        modifier = Modifier.padding(start = 4.dp),
-                    ) { Text("Add child") }
-                }
-                if (path.isNotEmpty()) {
-                    TextButton(
-                        onClick = { onRemove(path) },
-                        modifier = Modifier.padding(start = 4.dp),
-                    ) { Text("Remove") }
-                }
             }
         }
     }
-    if (node is Container) {
-        node.children.forEachIndexed { index, child ->
-            NodeRow(
-                node = child,
-                path = path + index,
-                depth = depth + 1,
-                selected = selected,
-                onSelect = onSelect,
-                onAddChild = onAddChild,
-                onRemove = onRemove,
-            )
-        }
+}
+
+/** Floating type/id tag pinned above the selected node, drawn from registry geometry. */
+@Composable
+private fun BoxScope.SelectionLabel(
+    workspace: EditorWorkspaceState,
+    canvasOrigin: Offset,
+    chrome: ChromeColors,
+) {
+    val selected = workspace.selection ?: return
+    if (workspace.dragState.isDragging) return
+    val bounds = workspace.dropRegistry.boundsOf(selected) ?: return
+    val node = workspace.mutator.current.childAt(selected) ?: return
+    val local = bounds.topLeft - canvasOrigin
+    Surface(
+        color = chrome.selection,
+        shape = RoundedCornerShape(LABEL_CORNER_RADIUS),
+        modifier = Modifier
+            .align(Alignment.TopStart)
+            .offset {
+                IntOffset(
+                    x = local.x.roundToInt(),
+                    y = (local.y - LABEL_HEIGHT_PX).roundToInt().coerceAtLeast(0),
+                )
+            },
+    ) {
+        Text(
+            text = "${node::class.simpleName}  ${node.id.value}",
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onPrimary,
+            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+        )
     }
 }
 
-/** Human-readable summary of [node] for the canvas row label. */
-private fun describe(node: UiNode): String {
-    val typeName = node::class.simpleName ?: "Node"
-    val idValue = node.id.value
-    val suffix = when (node) {
-        is TextNode -> previewLiteralString(node.content)?.let { "  \"${it.take(SUMMARY_MAX)}\"" } ?: ""
-        is ButtonNode -> previewLiteralString(node.label)?.let { "  [${it.take(SUMMARY_MAX)}]" } ?: ""
-        else -> ""
+/** Small floating card following the pointer while a drag is active. */
+@Composable
+private fun BoxScope.DragGhost(
+    workspace: EditorWorkspaceState,
+    canvasOrigin: Offset,
+    chrome: ChromeColors,
+) {
+    val payload = workspace.dragState.payload ?: return
+    val label = when (payload) {
+        is DragPayload.NewNode -> payload.descriptor.typeName
+        is DragPayload.ExistingNode ->
+            workspace.mutator.current.childAt(payload.path)?.let { it::class.simpleName } ?: "node"
     }
-    return "$typeName  ($idValue)$suffix"
+    val local = workspace.dragState.pointerInWindow - canvasOrigin
+    Surface(
+        color = chrome.selection,
+        shape = RoundedCornerShape(LABEL_CORNER_RADIUS),
+        modifier = Modifier
+            .align(Alignment.TopStart)
+            .offset {
+                IntOffset(
+                    x = (local.x + GHOST_POINTER_OFFSET_PX).roundToInt(),
+                    y = (local.y + GHOST_POINTER_OFFSET_PX).roundToInt(),
+                )
+            }
+            .alpha(GHOST_ALPHA),
+    ) {
+        Text(
+            text = label ?: "node",
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onPrimary,
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+        )
+    }
 }
 
-/**
- * Best-effort preview of a [Value.Literal]'s string contents. Returns `null` for binds, templates,
- * or non-string literals — the canvas just shows the type name in those cases.
- */
-private fun previewLiteralString(value: Value<String>): String? {
-    val literal = value as? Value.Literal<*> ?: return null
-    val content = literal.value.toString()
-    return content.trim('"')
-}
-
-private const val INDENT_DP: Int = 16
-private const val SUMMARY_MAX: Int = 30
+private const val DROP_FILL_ALPHA = 0.08f
+private const val DROP_LINE_STROKE_PX = 2f
+private const val DROP_LINE_DOT_RADIUS_PX = 3f
+private val DEVICE_CORNER_RADIUS = 12.dp
+private val DEVICE_CONTENT_PADDING = 8.dp
+private val FRAME_V_MARGIN = 16.dp
+private val LABEL_CORNER_RADIUS = 3.dp
+private const val LABEL_HEIGHT_PX = 20
+private const val GHOST_POINTER_OFFSET_PX = 12
+private const val GHOST_ALPHA = 0.9f
