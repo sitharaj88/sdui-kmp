@@ -113,6 +113,35 @@ into a cycle would crash the editor canvas on next render.
   interface; the only manual step is updating the canvas's drop-target rendering, which
   already iterates `Container.children` generically.
 
+## Amendments (M-S7)
+
+The M-S7 editor overhaul (WYSIWYG canvas, layers panel, full palette/inspector, drag-drop)
+kept every decision above except where noted:
+
+* **Undo/redo is a typed snapshot mutator, not the `Op` log described above.** The shipped
+  `TreeMutator` stores full `UiNode` snapshots behind a replace-only API (`replace` / `undo` /
+  `redo`, capped at 50 entries — pinned by `TreeMutatorTest`); callers compute the next tree
+  with pure `TreeOps` helpers (`replacingAt`, `insertingChildAt`, `removingAt`, `movingNode`).
+  The `Op`-log-over-`JsonElement` design was never built: typed snapshots achieve the same
+  additive-evolution property (new node types need no mutator changes) with far less
+  machinery, and same-position no-op edits are filtered by structural equality in the
+  workspace commit path instead of op-level bookkeeping. There is also no
+  `tree: StateFlow<UiNode>` — the mutator exposes a Compose-observable `current` directly.
+* **Named slot children are not individually selectable.** `TreePath` (a `List<Int>` over
+  `Container.children`) cannot address single-slot fields like `AsyncImage.placeholder` or
+  `LazyList.itemTemplate`. The canvas renders slots inside labelled dashed frames as
+  non-interactive subtrees; slot contents are edited via inspector slot rows or the JSON tab.
+  A future `SlotStep` extension to the path type would lift this.
+* **Drop resolution is a pure function.** `resolveDropLocation` (canvas: deepest
+  non-descendant container, midpoint insertion index) and `resolveLayersDrop` (layers panel:
+  flat row-gap mapping) are top-level functions over registered window rects, unit-tested in
+  `DropResolutionTest` without any UI. Cycle prevention lives both there and in
+  `TreeOps.movingNode` — the defence-in-depth this ADR called for, with the second check in
+  the op rather than the mutator.
+* **The canvas nests a stock light Material3 theme** inside its device frame so token-styled
+  facsimiles resolve like production clients rather than inheriting the Studio's dark theme;
+  editor chrome colors are captured from the Studio theme before nesting.
+
 ## Alternatives considered
 
 * **Reuse `SduiHost` for the canvas.** Rejected — see the "edit-mode renderer" section.

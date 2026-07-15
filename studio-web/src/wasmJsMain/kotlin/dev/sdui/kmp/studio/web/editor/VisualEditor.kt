@@ -1,5 +1,6 @@
 package dev.sdui.kmp.studio.web.editor
 
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -22,8 +23,18 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEvent
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.isCtrlPressed
+import androidx.compose.ui.input.key.isShiftPressed
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -72,7 +83,19 @@ public fun VisualEditor(
     val current = workspace.mutator.current
     val selectedNode = workspace.selection?.let { current.childAt(it) }
 
-    Column(modifier = modifier.fillMaxSize()) {
+    // Keyboard shortcuts ride on bubbling onKeyEvent (NOT onPreviewKeyEvent) so focused
+    // inspector text fields consume their own Delete/Backspace/Ctrl+Z first; only unhandled
+    // keys reach the workspace.
+    val focusRequester = remember { FocusRequester() }
+    LaunchedEffect(workspace) { focusRequester.requestFocus() }
+
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .focusRequester(focusRequester)
+            .focusable()
+            .onKeyEvent { event -> handleEditorKey(event, workspace) },
+    ) {
         EditorToolbar(
             workspace = workspace,
             onApply = { onScreenChange(screen.copy(root = workspace.mutator.current)) },
@@ -251,6 +274,42 @@ internal fun EditorWorkspaceState.insertFromPalette(node: UiNode) {
         commit(updated)
         selection = newPath
     }
+}
+
+/**
+ * Workspace keyboard shortcuts: Delete/Backspace removes the selection, Ctrl+Z / Ctrl+Shift+Z
+ * (or Ctrl+Y) undoes/redoes, Escape clears the selection or cancels an active drag.
+ */
+@Suppress("ReturnCount")
+private fun handleEditorKey(event: KeyEvent, workspace: EditorWorkspaceState): Boolean {
+    if (event.type != KeyEventType.KeyDown) return false
+    when (event.key) {
+        Key.Delete, Key.Backspace -> {
+            if (workspace.selection?.isNotEmpty() == true) {
+                workspace.deleteSelection()
+                return true
+            }
+        }
+        Key.Z -> if (event.isCtrlPressed) {
+            if (event.isShiftPressed) workspace.mutator.redo() else workspace.mutator.undo()
+            workspace.normalizeSelection()
+            return true
+        }
+        Key.Y -> if (event.isCtrlPressed) {
+            workspace.mutator.redo()
+            workspace.normalizeSelection()
+            return true
+        }
+        Key.Escape -> {
+            if (workspace.dragState.isDragging) {
+                workspace.dragState.clear()
+            } else {
+                workspace.selection = null
+            }
+            return true
+        }
+    }
+    return false
 }
 
 /** Removes the selected node (root is not deletable) and clears the selection. */
