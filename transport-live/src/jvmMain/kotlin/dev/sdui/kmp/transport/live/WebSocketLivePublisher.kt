@@ -91,6 +91,9 @@ public class WebSocketLivePublisher(
      * no-op so route handlers can call this without bookkeeping. Fires [onFirstSubscribe]
      * when this call takes the topic from zero to one subscriber.
      */
+    // Suspend is part of the public contract: registration may grow I/O (e.g. replay-on-
+    // subscribe) without a breaking signature change.
+    @Suppress("RedundantSuspendModifier")
     public suspend fun register(topic: String, session: WebSocketSession) {
         topics.compute(topic) { _, existing ->
             val state = existing ?: TopicState()
@@ -106,6 +109,8 @@ public class WebSocketLivePublisher(
      * topics so the close path can call this without checks. Fires [onLastUnsubscribe] and
      * evicts the topic when this call removes its last subscriber.
      */
+    // Suspend kept for signature symmetry with register; see comment there.
+    @Suppress("RedundantSuspendModifier")
     public suspend fun unregister(topic: String, session: WebSocketSession) {
         topics.computeIfPresent(topic) { _, state ->
             state.sessions.remove(session)

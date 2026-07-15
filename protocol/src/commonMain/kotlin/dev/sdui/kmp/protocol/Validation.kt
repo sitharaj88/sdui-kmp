@@ -37,7 +37,8 @@ public sealed interface Validation {
      * Produced only by [SduiSerializersModule]'s polymorphic default deserializer; servers must
      * never emit it.
      */
-    @Serializable @SerialName("__unknown__")
+    @Serializable
+    @SerialName("__unknown__")
     public data class Unknown(
         /** The original `type` discriminator the client could not resolve. */
         public val originalType: String = "",

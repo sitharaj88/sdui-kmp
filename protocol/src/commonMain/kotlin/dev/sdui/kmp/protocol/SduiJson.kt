@@ -39,13 +39,19 @@ public val SduiSerializersModule: SerializersModule = SerializersModule {
         defaultDeserializer { type -> unknownSentinel<Predicate>("__unknown_predicate__", type) { Predicate.Unknown(it) } }
     }
     polymorphic(Validation::class) {
-        defaultDeserializer { type -> unknownSentinel<Validation>("__unknown_validation__", type) { Validation.Unknown(it) } }
+        defaultDeserializer { type ->
+            unknownSentinel<Validation>("__unknown_validation__", type) { Validation.Unknown(it) }
+        }
     }
     polymorphic(Destination::class) {
-        defaultDeserializer { type -> unknownSentinel<Destination>("__unknown_destination__", type) { Destination.Unknown(it) } }
+        defaultDeserializer { type ->
+            unknownSentinel<Destination>("__unknown_destination__", type) { Destination.Unknown(it) }
+        }
     }
     polymorphic(RetryPolicy::class) {
-        defaultDeserializer { type -> unknownSentinel<RetryPolicy>("__unknown_retry_policy__", type) { RetryPolicy.Unknown(it) } }
+        defaultDeserializer { type ->
+            unknownSentinel<RetryPolicy>("__unknown_retry_policy__", type) { RetryPolicy.Unknown(it) }
+        }
     }
     polymorphic(PatchOp::class) {
         defaultDeserializer { type -> unknownSentinel<PatchOp>("__unknown_patch_op__", type) { PatchOp.Unknown(it) } }
