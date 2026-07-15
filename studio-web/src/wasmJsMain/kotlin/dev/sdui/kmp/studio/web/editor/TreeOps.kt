@@ -73,6 +73,89 @@ internal fun UiNode.removingAt(path: TreePath): UiNode? {
     return container.withChildAt(head, updatedChild)
 }
 
+/**
+ * Returns a copy of this tree with [child] inserted at [index] into the children of the
+ * [Container] at [path].
+ *
+ * Returns `null` when [path] does not resolve, resolves to a non-container, or [index] is
+ * outside `0..children.size`. `index == children.size` appends, so
+ * `insertingChild(p, c) == insertingChildAt(p, children.size, c)`.
+ */
+@Suppress("ReturnCount")
+internal fun UiNode.insertingChildAt(path: TreePath, index: Int, child: UiNode): UiNode? {
+    val container = this as? Container ?: return null
+    if (path.isEmpty()) {
+        if (index !in 0..container.children.size) return null
+        return container.withChildren(
+            container.children.toMutableList().apply { add(index, child) },
+        )
+    }
+    val head = path.first()
+    val existing = container.children.getOrNull(head) ?: return null
+    val updatedChild = existing.insertingChildAt(path.drop(1), index, child) ?: return null
+    return container.withChildAt(head, updatedChild)
+}
+
+/** True when `this` path equals [ancestor] or lies strictly inside its subtree. */
+internal fun TreePath.isSelfOrDescendantOf(ancestor: TreePath): Boolean =
+    size >= ancestor.size && take(ancestor.size) == ancestor
+
+/**
+ * Returns a copy of this tree with the node at [from] removed and re-inserted into the
+ * [Container] at [toContainer] at [index].
+ *
+ * [index] is interpreted against the container's children as the caller sees them BEFORE the
+ * removal; when the removal itself shifts the destination (moving within the same parent, or
+ * into a container that sits after the source among its siblings) the index and path are
+ * adjusted internally — see [adjustedDestination].
+ *
+ * Returns `null` when:
+ *  * [from] is empty (cannot move the root),
+ *  * [from] does not resolve,
+ *  * [toContainer] is [from] or a descendant of [from] (would create a cycle),
+ *  * [toContainer] does not resolve to a [Container] in the post-removal tree,
+ *  * the adjusted index is outside `0..children.size`.
+ *
+ * A move that lands the node back in its original position returns a tree structurally equal
+ * to the receiver (not `null`) — callers use equality to skip no-op history entries.
+ */
+@Suppress("ReturnCount")
+internal fun UiNode.movingNode(from: TreePath, toContainer: TreePath, index: Int): UiNode? {
+    if (from.isEmpty()) return null
+    if (toContainer.isSelfOrDescendantOf(from)) return null
+    val node = childAt(from) ?: return null
+    val (adjustedPath, adjustedIndex) = adjustedDestination(from, toContainer, index)
+    val removed = removingAt(from) ?: return null
+    return removed.insertingChildAt(adjustedPath, adjustedIndex, node)
+}
+
+/**
+ * Translates a pre-removal drop destination into post-removal coordinates for [movingNode].
+ *
+ * Two shifts can apply once the node at [from] is removed:
+ *  * the destination container's own path loses one index where it passes the removed
+ *    sibling (`toContainer` runs through `from`'s parent at a later index), and
+ *  * a destination *inside the same parent* after the removed slot loses one index.
+ *
+ * Exposed (rather than private) so drag-drop UI code can compute the node's post-move
+ * selection path with exactly the same rule the op uses.
+ */
+internal fun adjustedDestination(from: TreePath, toContainer: TreePath, index: Int): Pair<TreePath, Int> {
+    val parent = from.dropLast(1)
+    val removedIndex = from.last()
+    val adjustedPath = if (
+        toContainer.size > parent.size &&
+        toContainer.take(parent.size) == parent &&
+        toContainer[parent.size] > removedIndex
+    ) {
+        toContainer.toMutableList().apply { this[parent.size] = this[parent.size] - 1 }
+    } else {
+        toContainer
+    }
+    val adjustedIndex = if (toContainer == parent && index > removedIndex) index - 1 else index
+    return adjustedPath to adjustedIndex
+}
+
 /** Replace exactly one child of `this` at [index] with [child] and return the rebuilt container. */
 private fun Container.withChildAt(index: Int, child: UiNode): Container =
     withChildren(children.toMutableList().apply { this[index] = child })
