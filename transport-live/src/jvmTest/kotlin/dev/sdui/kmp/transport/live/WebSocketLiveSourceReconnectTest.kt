@@ -130,7 +130,10 @@ class WebSocketLiveSourceReconnectTest {
             onConnectionError = { },
             reconnect = ReconnectPolicy(),
             scope = backgroundScope,
-            connect = { connectCalls += 1; FakeLiveSocket().also { sessions += it } },
+            connect = {
+                connectCalls += 1
+                FakeLiveSocket().also { sessions += it }
+            },
             delayFn = { },
             random = { 0.0 },
         )
