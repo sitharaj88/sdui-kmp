@@ -9,16 +9,13 @@ import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -96,36 +93,33 @@ internal fun EditorCanvas(
     ) {
         CompositionLocalProvider(LocalChromeColors provides chrome) {
             val preset = workspace.canvasWidth
-            // The frame sits in an at-least-viewport-tall, vertically centered box that itself
-            // scrolls: short screens float centered on the backdrop, tall screens scroll from the
-            // top instead of clipping at the canvas edge.
-            BoxWithConstraints(Modifier.fillMaxSize()) {
-                val viewportHeight = maxHeight
-                Box(
-                    modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()),
-                    contentAlignment = Alignment.TopCenter,
+            // The frame is vertically centered on the backdrop and bounded to the viewport height:
+            // a short screen floats centered, a tall screen scrolls INSIDE the device via the
+            // scaffold's own scroll. Critically we must NOT wrap the scaffold in another
+            // verticalScroll — the scaffold already scrolls its content, and nesting scrolls would
+            // measure the inner one with an infinite max-height constraint and crash at runtime.
+            BoxWithConstraints(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = CANVAS_H_PADDING, vertical = CANVAS_V_PADDING),
+                contentAlignment = Alignment.Center,
+            ) {
+                val maxFrameHeight = maxHeight
+                DeviceFrameScaffold(
+                    preset = preset,
+                    dark = false,
+                    fillHeight = false,
+                    contentPadding = DEVICE_CONTENT_PADDING,
+                    modifier = Modifier
+                        .heightIn(max = maxFrameHeight)
+                        .drawBehind { drawArtboardShadow(preset.cornerRadius.toPx()) }
+                        .shadow(FRAME_ELEVATION, RoundedCornerShape(preset.cornerRadius)),
                 ) {
-                    Box(
-                        modifier = Modifier.fillMaxWidth().heightIn(min = viewportHeight),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        DeviceFrameScaffold(
-                            preset = preset,
-                            dark = false,
-                            fillHeight = false,
-                            contentPadding = DEVICE_CONTENT_PADDING,
-                            modifier = Modifier
-                                .padding(horizontal = CANVAS_H_PADDING, vertical = CANVAS_V_PADDING)
-                                .drawBehind { drawArtboardShadow(preset.cornerRadius.toPx()) }
-                                .shadow(FRAME_ELEVATION, RoundedCornerShape(preset.cornerRadius)),
-                        ) {
-                            CanvasNode(
-                                node = workspace.mutator.current,
-                                path = emptyList(),
-                                workspace = workspace,
-                            )
-                        }
-                    }
+                    CanvasNode(
+                        node = workspace.mutator.current,
+                        path = emptyList(),
+                        workspace = workspace,
+                    )
                 }
             }
             NodeActionToolbar(workspace = workspace, canvasOrigin = canvasOrigin, chrome = chrome)
