@@ -99,8 +99,9 @@ internal fun EditorCanvas(
 @Composable
 private fun DeviceFrame(workspace: EditorWorkspaceState) {
     val hairline = MaterialTheme.colorScheme.outlineVariant
-    val widthModifier = workspace.canvasWidth.dp
-        ?.let { Modifier.width(it.dp) }
+    val preset = workspace.canvasWidth
+    val widthModifier = preset.contentWidth
+        ?.let { Modifier.width(it) }
         ?: Modifier.fillMaxWidth()
     MaterialTheme(
         colorScheme = lightColorScheme(),
@@ -108,7 +109,7 @@ private fun DeviceFrame(workspace: EditorWorkspaceState) {
         shapes = Shapes(),
     ) {
         Surface(
-            shape = RoundedCornerShape(DEVICE_CORNER_RADIUS),
+            shape = RoundedCornerShape(preset.cornerRadius),
             border = BorderStroke(1.dp, hairline),
             color = MaterialTheme.colorScheme.background,
             modifier = widthModifier.padding(vertical = FRAME_V_MARGIN),
@@ -200,7 +201,6 @@ private fun BoxScope.DragGhost(
 private const val DROP_FILL_ALPHA = 0.08f
 private const val DROP_LINE_STROKE_PX = 2f
 private const val DROP_LINE_DOT_RADIUS_PX = 3f
-private val DEVICE_CORNER_RADIUS = 12.dp
 private val DEVICE_CONTENT_PADDING = 8.dp
 private val FRAME_V_MARGIN = 16.dp
 private val LABEL_CORNER_RADIUS = 3.dp

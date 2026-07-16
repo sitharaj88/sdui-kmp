@@ -252,6 +252,35 @@ internal object StudioIcons {
         )
     }
 
+    // -- Device presets (preview / canvas frame picker) -----------------------------------
+
+    /** Smartphone outline — Phone device preset. */
+    val DevicePhone: ImageVector by lazy {
+        icon(
+            "DevicePhone",
+            "M17,1.01L7,1C5.9,1 5,1.9 5,3v18c0,1.1 0.9,2 2,2h10c1.1,0 2,-0.9 2,-2V3c0,-1.1 -0.9,-1.99 " +
+                "-2,-1.99zM17,19H7V5h10v14z",
+        )
+    }
+
+    /** Landscape tablet outline — Tablet device preset. */
+    val DeviceTablet: ImageVector by lazy {
+        icon(
+            "DeviceTablet",
+            "M21,4H3c-1.1,0 -2,0.9 -2,2v12c0,1.1 0.9,2 2,2h18c1.1,0 2,-0.9 2,-2V6c0,-1.1 -0.9,-2 -2,-2z" +
+                "M21,18H3V6h18v12z",
+        )
+    }
+
+    /** Monitor with stand — Desktop device preset. */
+    val DeviceDesktop: ImageVector by lazy {
+        icon(
+            "DeviceDesktop",
+            "M21,2H3c-1.1,0 -2,0.9 -2,2v12c0,1.1 0.9,2 2,2h7v2H8v2h8v-2h-2v-2h7c1.1,0 2,-0.9 2,-2V4c0," +
+                "-1.1 -0.9,-2 -2,-2zM21,16H3V4h18v12z",
+        )
+    }
+
     // -- Widget-type glyphs (palette, layers panel) ----------------------------------------
 
     /** Stacked rows — Column container. */

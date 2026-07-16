@@ -42,8 +42,7 @@ import androidx.compose.ui.unit.dp
 import dev.sdui.kmp.protocol.Container
 import dev.sdui.kmp.protocol.Screen
 import dev.sdui.kmp.protocol.UiNode
-import dev.sdui.kmp.studio.web.components.SegmentOption
-import dev.sdui.kmp.studio.web.components.SegmentedControl
+import dev.sdui.kmp.studio.web.components.DevicePresetPicker
 import dev.sdui.kmp.studio.web.components.StudioPanel
 import dev.sdui.kmp.studio.web.components.ToolbarButton
 import dev.sdui.kmp.studio.web.theme.StudioIcons
@@ -181,10 +180,9 @@ private fun EditorToolbar(
                 workspace.normalizeSelection()
             },
         )
-        SegmentedControl(
-            options = CanvasWidthPreset.entries.map { SegmentOption(label = it.label) },
-            selectedIndex = workspace.canvasWidth.ordinal,
-            onSelect = { workspace.canvasWidth = CanvasWidthPreset.entries[it] },
+        DevicePresetPicker(
+            selected = workspace.canvasWidth,
+            onSelect = { workspace.canvasWidth = it },
             modifier = Modifier.padding(start = 6.dp),
         )
         Box(Modifier.weight(1f))

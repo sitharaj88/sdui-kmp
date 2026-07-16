@@ -7,13 +7,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.SnapshotStateMap
 import dev.sdui.kmp.protocol.UiNode
-
-/** Canvas device-width presets; `dp == null` means fill the available width. */
-internal enum class CanvasWidthPreset(val label: String, val dp: Int?) {
-    Phone("Phone", PHONE_WIDTH_DP),
-    Tablet("Tablet", TABLET_WIDTH_DP),
-    Fill("Fill", null),
-}
+import dev.sdui.kmp.studio.web.components.DevicePreset
 
 /**
  * Shared state for the visual-editor workspace: the [TreeMutator], the current selection and
@@ -32,8 +26,8 @@ internal class EditorWorkspaceState(val mutator: TreeMutator) {
     /** Currently hovered node path (canvas or layers row), or null. */
     var hovered: TreePath? by mutableStateOf(null)
 
-    /** Canvas device-frame width. */
-    var canvasWidth: CanvasWidthPreset by mutableStateOf(CanvasWidthPreset.Phone)
+    /** Canvas device-frame preset (width + corner radius). */
+    var canvasWidth: DevicePreset by mutableStateOf(DevicePreset.Phone)
 
     /** Live drag session (palette spawn or canvas move). */
     val dragState: DragDropState = DragDropState()
@@ -119,6 +113,3 @@ internal class EditorWorkspaceState(val mutator: TreeMutator) {
         dragState.clear()
     }
 }
-
-private const val PHONE_WIDTH_DP = 390
-private const val TABLET_WIDTH_DP = 768

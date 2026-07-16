@@ -48,6 +48,8 @@ import dev.sdui.kmp.studio.web.api.PublishResult
 import dev.sdui.kmp.studio.web.api.ScreenVersion
 import dev.sdui.kmp.studio.web.api.StudioApi
 import dev.sdui.kmp.studio.web.components.ChipKind
+import dev.sdui.kmp.studio.web.components.DevicePreset
+import dev.sdui.kmp.studio.web.components.DevicePresetPicker
 import dev.sdui.kmp.studio.web.components.DevicePreviewFrame
 import dev.sdui.kmp.studio.web.components.EmptyState
 import dev.sdui.kmp.studio.web.components.ErrorState
@@ -468,10 +470,16 @@ private fun PreviewPane(
         }
     }
     var previewDark by remember { mutableStateOf(false) }
+    var previewPreset by remember { mutableStateOf(DevicePreset.Phone) }
     StudioPanel(
         title = "PREVIEW",
         contentPadding = 0.dp,
         headerActions = {
+            DevicePresetPicker(
+                selected = previewPreset,
+                onSelect = { previewPreset = it },
+                modifier = Modifier.padding(end = 8.dp),
+            )
             if (hasDecodeError) {
                 StatusChip(text = "Stale", kind = ChipKind.Warning)
             }
@@ -500,7 +508,7 @@ private fun PreviewPane(
                     icon = StudioIcons.Code,
                 )
             } else {
-                DevicePreviewFrame(dark = previewDark) {
+                DevicePreviewFrame(preset = previewPreset, dark = previewDark) {
                     RenderScreen(screen = screen, registry = registry)
                 }
             }
