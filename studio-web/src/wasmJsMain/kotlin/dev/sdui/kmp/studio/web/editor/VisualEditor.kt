@@ -1,5 +1,6 @@
 package dev.sdui.kmp.studio.web.editor
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -9,15 +10,18 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
@@ -97,6 +101,7 @@ public fun VisualEditor(
     ) {
         EditorToolbar(
             workspace = workspace,
+            dirty = current != screen.root,
             onApply = { onScreenChange(screen.copy(root = workspace.mutator.current)) },
         )
         Row(
@@ -137,15 +142,27 @@ public fun VisualEditor(
                 modifier = Modifier.width(INSPECTOR_WIDTH).fillMaxHeight(),
             ) {
                 Box(Modifier.verticalScroll(rememberScrollState())) {
-                    PropertyInspector(
-                        selected = selectedNode,
-                        onChange = { replacement ->
-                            val path = workspace.selection ?: return@PropertyInspector
-                            val updated = workspace.mutator.current.replacingAt(path, replacement)
-                            if (updated != null) workspace.commit(updated)
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                    )
+                    if (selectedNode == null) {
+                        InspectorEmptyState(
+                            modifier = Modifier.fillMaxWidth(),
+                            overview = {
+                                ScreenOverviewCard(
+                                    screenId = screen.id.value,
+                                    nodeCount = current.nodeCount(),
+                                )
+                            },
+                        )
+                    } else {
+                        PropertyInspector(
+                            selected = selectedNode,
+                            onChange = { replacement ->
+                                val path = workspace.selection ?: return@PropertyInspector
+                                val updated = workspace.mutator.current.replacingAt(path, replacement)
+                                if (updated != null) workspace.commit(updated)
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    }
                 }
             }
         }
@@ -155,12 +172,13 @@ public fun VisualEditor(
 @Composable
 private fun EditorToolbar(
     workspace: EditorWorkspaceState,
+    dirty: Boolean,
     onApply: () -> Unit,
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        horizontalArrangement = Arrangement.spacedBy(TOOLBAR_GROUP_GAP),
     ) {
         ToolbarIconButton(
             icon = StudioIcons.Undo,
@@ -180,10 +198,10 @@ private fun EditorToolbar(
                 workspace.normalizeSelection()
             },
         )
+        ToolbarDivider()
         DevicePresetPicker(
             selected = workspace.canvasWidth,
             onSelect = { workspace.canvasWidth = it },
-            modifier = Modifier.padding(start = 6.dp),
         )
         Box(Modifier.weight(1f))
         ToolbarIconButton(
@@ -192,8 +210,25 @@ private fun EditorToolbar(
             enabled = workspace.selection?.isNotEmpty() == true,
             onClick = { workspace.deleteSelection() },
         )
-        ToolbarButton(text = "Apply to JSON", onClick = onApply)
+        ToolbarDivider()
+        if (dirty) {
+            Box(
+                Modifier
+                    .size(DIRTY_DOT_SIZE)
+                    .background(MaterialTheme.colorScheme.primary, CircleShape),
+            )
+        }
+        ToolbarButton(text = "Apply to JSON", onClick = onApply, enabled = dirty)
     }
+}
+
+/** Thin vertical hairline separating toolbar groups. */
+@Composable
+private fun ToolbarDivider() {
+    VerticalDivider(
+        modifier = Modifier.height(TOOLBAR_DIVIDER_HEIGHT),
+        color = MaterialTheme.colorScheme.outlineVariant,
+    )
 }
 
 @Composable
@@ -319,12 +354,15 @@ internal fun EditorWorkspaceState.deleteSelection() {
     selection = null
 }
 
-private val PALETTE_WIDTH = 260.dp
-private val INSPECTOR_WIDTH = 320.dp
-private const val PALETTE_WEIGHT = 0.55f
-private const val LAYERS_WEIGHT = 0.45f
+private val PALETTE_WIDTH = 280.dp
+private val INSPECTOR_WIDTH = 332.dp
+private const val PALETTE_WEIGHT = 0.62f
+private const val LAYERS_WEIGHT = 0.38f
 private val TOOLBAR_ICON_BUTTON_SIZE = 32.dp
 private val TOOLBAR_ICON_SIZE = 16.dp
+private val TOOLBAR_GROUP_GAP = 6.dp
+private val TOOLBAR_DIVIDER_HEIGHT = 20.dp
+private val DIRTY_DOT_SIZE = 7.dp
 private const val DISABLED_ICON_ALPHA = 0.4f
 
 /**

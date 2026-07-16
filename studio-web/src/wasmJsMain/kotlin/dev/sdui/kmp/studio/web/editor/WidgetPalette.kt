@@ -2,7 +2,11 @@ package dev.sdui.kmp.studio.web.editor
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.hoverable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -26,6 +30,7 @@ import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import dev.sdui.kmp.protocol.UiNode
 import dev.sdui.kmp.studio.web.components.studioFieldColors
 import dev.sdui.kmp.studio.web.theme.StudioIcons
@@ -68,10 +73,12 @@ internal fun WidgetPalette(
             modifier = Modifier.fillMaxWidth(),
         )
         val visible = DefaultWidgetPalette.filter {
-            filter.isBlank() || it.typeName.contains(filter.trim(), ignoreCase = true)
+            filter.isBlank() ||
+                it.typeName.contains(filter.trim(), ignoreCase = true) ||
+                it.description.contains(filter.trim(), ignoreCase = true)
         }
         Column(
-            verticalArrangement = Arrangement.spacedBy(4.dp),
+            verticalArrangement = Arrangement.spacedBy(ENTRY_GAP),
             modifier = Modifier.verticalScroll(rememberScrollState()),
         ) {
             WidgetCategory.entries.forEach { category ->
@@ -81,7 +88,8 @@ internal fun WidgetPalette(
                     text = category.label.uppercase(),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = 6.dp, bottom = 2.dp),
+                    letterSpacing = SECTION_LETTER_SPACING,
+                    modifier = Modifier.padding(top = SECTION_TOP_PADDING, bottom = SECTION_BOTTOM_PADDING),
                 )
                 entries.forEach { descriptor ->
                     PaletteEntry(
@@ -101,33 +109,59 @@ private fun PaletteEntry(
     onAdd: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val interactions = remember { MutableInteractionSource() }
+    val hovered by interactions.collectIsHoveredAsState()
     Surface(
         shape = MaterialTheme.shapes.small,
-        color = MaterialTheme.colorScheme.surfaceContainer,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+        color = if (hovered) {
+            MaterialTheme.colorScheme.surfaceContainerHigh
+        } else {
+            MaterialTheme.colorScheme.surfaceContainer
+        },
+        border = BorderStroke(
+            width = 1.dp,
+            color = if (hovered) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
+        ),
         modifier = modifier
             .fillMaxWidth()
+            .hoverable(interactions)
             .pointerHoverIcon(PointerIcon.Hand)
             .clickable(onClick = onAdd),
     ) {
         Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.Top,
+            horizontalArrangement = Arrangement.spacedBy(ENTRY_ICON_GAP),
+            modifier = Modifier.padding(horizontal = ENTRY_H_PADDING, vertical = ENTRY_V_PADDING),
         ) {
-            Icon(
-                imageVector = descriptor.icon,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(ENTRY_ICON_SIZE),
-            )
-            Column {
-                Text(text = descriptor.typeName, style = MaterialTheme.typography.labelLarge)
+            Surface(
+                shape = MaterialTheme.shapes.extraSmall,
+                color = MaterialTheme.colorScheme.surfaceContainerHighest,
+                modifier = Modifier.size(ENTRY_ICON_BOX),
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        imageVector = descriptor.icon,
+                        contentDescription = null,
+                        tint = if (hovered) {
+                            MaterialTheme.colorScheme.primary
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        },
+                        modifier = Modifier.size(ENTRY_ICON_SIZE),
+                    )
+                }
+            }
+            Column(verticalArrangement = Arrangement.spacedBy(ENTRY_TEXT_GAP)) {
+                Text(
+                    text = descriptor.typeName,
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
                 Text(
                     text = descriptor.description,
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
+                    maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                 )
             }
@@ -137,3 +171,12 @@ private fun PaletteEntry(
 
 private val FILTER_ICON_SIZE = 14.dp
 private val ENTRY_ICON_SIZE = 16.dp
+private val ENTRY_ICON_BOX = 30.dp
+private val ENTRY_ICON_GAP = 10.dp
+private val ENTRY_H_PADDING = 10.dp
+private val ENTRY_V_PADDING = 9.dp
+private val ENTRY_GAP = 6.dp
+private val ENTRY_TEXT_GAP = 2.dp
+private val SECTION_TOP_PADDING = 8.dp
+private val SECTION_BOTTOM_PADDING = 3.dp
+private val SECTION_LETTER_SPACING = 0.6.sp
