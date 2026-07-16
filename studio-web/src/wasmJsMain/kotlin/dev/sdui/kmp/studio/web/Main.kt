@@ -26,6 +26,7 @@ import dev.sdui.kmp.studio.web.api.StudioApi
 import dev.sdui.kmp.studio.web.state.AuthState
 import dev.sdui.kmp.studio.web.theme.StudioTheme
 import kotlinx.browser.document
+import kotlinx.coroutines.withTimeoutOrNull
 
 /**
  * Browser entrypoint for the sdui-kmp Studio admin console.
@@ -51,15 +52,29 @@ public fun main() {
         val api = remember { StudioApi(baseUrl = DEFAULT_STUDIO_BASE_URL, authState = authState) }
         var bootValidated by remember { mutableStateOf(authState.token == null) }
 
+        // Tear down the pre-wasm CSS splash once Compose is live. It is `position: fixed`, so it
+        // paints *above* the `position: static` ComposeViewport canvas regardless of DOM order —
+        // if we leave it in place it covers the entire running app forever. Removing it on the
+        // first composition reveals the Compose tree underneath (which draws the dark theme
+        // background, so there is no flash).
+        LaunchedEffect(Unit) {
+            val splash = document.getElementById("boot-splash")
+            splash?.parentNode?.removeChild(splash)
+        }
+
         // Validate any cached token by issuing a single authenticated request. We use
         // listScreens because every authenticated editor — regardless of role — can call it,
-        // and it's the same request the Screens tab will issue immediately after.
+        // and it's the same request the Screens tab will issue immediately after. The whole
+        // probe is time-boxed so an unreachable backend degrades to the login screen instead of
+        // wedging the in-app boot spinner indefinitely.
         LaunchedEffect(Unit) {
             if (authState.token == null) {
                 bootValidated = true
                 return@LaunchedEffect
             }
-            val ok = runCatching { api.listScreens() }.isSuccess
+            val ok = withTimeoutOrNull(BOOT_VALIDATION_TIMEOUT_MS) {
+                runCatching { api.listScreens() }.isSuccess
+            } ?: false
             if (!ok) authState.signOut()
             bootValidated = true
         }
@@ -126,6 +141,9 @@ private val BOOT_SPLASH_GAP = 12.dp
 private val BOOT_LOGO_SIZE = 28.dp
 private val BOOT_SPINNER_SIZE = 28.dp
 private val BOOT_SPINNER_STROKE = 3.dp
+
+/** Upper bound on the cached-token probe before boot falls through to the login screen. */
+private const val BOOT_VALIDATION_TIMEOUT_MS: Long = 5000L
 
 /**
  * Default base URL for the Studio admin REST API in local development.
