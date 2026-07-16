@@ -356,8 +356,8 @@ internal fun EditorWorkspaceState.deleteSelection() {
 
 private val PALETTE_WIDTH = 280.dp
 private val INSPECTOR_WIDTH = 332.dp
-private const val PALETTE_WEIGHT = 0.62f
-private const val LAYERS_WEIGHT = 0.38f
+private const val PALETTE_WEIGHT = 0.68f
+private const val LAYERS_WEIGHT = 0.32f
 private val TOOLBAR_ICON_BUTTON_SIZE = 32.dp
 private val TOOLBAR_ICON_SIZE = 16.dp
 private val TOOLBAR_GROUP_GAP = 6.dp

@@ -9,7 +9,9 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -26,6 +28,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.text.style.TextOverflow
@@ -53,7 +61,7 @@ internal fun WidgetPalette(
     itemModifier: (WidgetDescriptor) -> Modifier = { Modifier },
 ) {
     var filter by remember { mutableStateOf("") }
-    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(6.dp)) {
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(FILTER_LIST_GAP)) {
         OutlinedTextField(
             value = filter,
             onValueChange = { filter = it },
@@ -77,30 +85,57 @@ internal fun WidgetPalette(
                 it.typeName.contains(filter.trim(), ignoreCase = true) ||
                 it.description.contains(filter.trim(), ignoreCase = true)
         }
-        Column(
-            verticalArrangement = Arrangement.spacedBy(ENTRY_GAP),
-            modifier = Modifier.verticalScroll(rememberScrollState()),
+        // The scroll region fills the remaining panel height so its bottom edge lands at the
+        // panel's real fold; a bottom fade softens any card the fold clips, and a trailing
+        // spacer lets the last card scroll fully clear of that fade.
+        val fadeColor = MaterialTheme.colorScheme.surfaceContainerLow
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f)
+                .drawWithContent {
+                    drawContent()
+                    drawBottomFade(fadeColor)
+                },
         ) {
-            WidgetCategory.entries.forEach { category ->
-                val entries = visible.filter { it.category == category }
-                if (entries.isEmpty()) return@forEach
-                Text(
-                    text = category.label.uppercase(),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    letterSpacing = SECTION_LETTER_SPACING,
-                    modifier = Modifier.padding(top = SECTION_TOP_PADDING, bottom = SECTION_BOTTOM_PADDING),
-                )
-                entries.forEach { descriptor ->
-                    PaletteEntry(
-                        descriptor = descriptor,
-                        onAdd = { onAdd(descriptor.factory()) },
-                        modifier = itemModifier(descriptor),
+            Column(
+                verticalArrangement = Arrangement.spacedBy(ENTRY_GAP),
+                modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()),
+            ) {
+                WidgetCategory.entries.forEach { category ->
+                    val entries = visible.filter { it.category == category }
+                    if (entries.isEmpty()) return@forEach
+                    Text(
+                        text = category.label.uppercase(),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        letterSpacing = SECTION_LETTER_SPACING,
+                        modifier = Modifier.padding(top = SECTION_TOP_PADDING, bottom = SECTION_BOTTOM_PADDING),
                     )
+                    entries.forEach { descriptor ->
+                        PaletteEntry(
+                            descriptor = descriptor,
+                            onAdd = { onAdd(descriptor.factory()) },
+                            modifier = itemModifier(descriptor),
+                        )
+                    }
                 }
+                Spacer(Modifier.height(LIST_BOTTOM_PADDING))
             }
         }
     }
+}
+
+/** Soft bottom fade blending the scrolled list into the panel so a clipped card never reads as sliced. */
+private fun DrawScope.drawBottomFade(color: Color) {
+    val fadeHeight = LIST_FADE_HEIGHT.toPx()
+    if (size.height <= fadeHeight) return
+    val top = size.height - fadeHeight
+    drawRect(
+        brush = Brush.verticalGradient(colors = listOf(Color.Transparent, color), startY = top, endY = size.height),
+        topLeft = Offset(0f, top),
+        size = Size(size.width, fadeHeight),
+    )
 }
 
 @Composable
@@ -176,6 +211,9 @@ private val ENTRY_ICON_GAP = 10.dp
 private val ENTRY_H_PADDING = 10.dp
 private val ENTRY_V_PADDING = 9.dp
 private val ENTRY_GAP = 6.dp
+private val FILTER_LIST_GAP = 6.dp
+private val LIST_BOTTOM_PADDING = 8.dp
+private val LIST_FADE_HEIGHT = 20.dp
 private val ENTRY_TEXT_GAP = 2.dp
 private val SECTION_TOP_PADDING = 8.dp
 private val SECTION_BOTTOM_PADDING = 3.dp

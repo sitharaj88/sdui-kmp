@@ -6,13 +6,19 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -28,7 +34,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.PointerIcon
@@ -85,28 +93,66 @@ internal fun EditorCanvas(
                 drawDotGrid(dotColor)
                 drawDropIndicator(workspace, chrome.selection, canvasBounds, canvasOrigin)
             },
-        contentAlignment = Alignment.TopCenter,
     ) {
         CompositionLocalProvider(LocalChromeColors provides chrome) {
             val preset = workspace.canvasWidth
-            DeviceFrameScaffold(
-                preset = preset,
-                dark = false,
-                fillHeight = false,
-                contentPadding = DEVICE_CONTENT_PADDING,
-                modifier = Modifier
-                    .padding(horizontal = CANVAS_H_PADDING, vertical = CANVAS_V_PADDING)
-                    .shadow(FRAME_ELEVATION, RoundedCornerShape(preset.cornerRadius)),
-            ) {
-                CanvasNode(
-                    node = workspace.mutator.current,
-                    path = emptyList(),
-                    workspace = workspace,
-                )
+            // The frame sits in an at-least-viewport-tall, vertically centered box that itself
+            // scrolls: short screens float centered on the backdrop, tall screens scroll from the
+            // top instead of clipping at the canvas edge.
+            BoxWithConstraints(Modifier.fillMaxSize()) {
+                val viewportHeight = maxHeight
+                Box(
+                    modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()),
+                    contentAlignment = Alignment.TopCenter,
+                ) {
+                    Box(
+                        modifier = Modifier.fillMaxWidth().heightIn(min = viewportHeight),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        DeviceFrameScaffold(
+                            preset = preset,
+                            dark = false,
+                            fillHeight = false,
+                            contentPadding = DEVICE_CONTENT_PADDING,
+                            modifier = Modifier
+                                .padding(horizontal = CANVAS_H_PADDING, vertical = CANVAS_V_PADDING)
+                                .drawBehind { drawArtboardShadow(preset.cornerRadius.toPx()) }
+                                .shadow(FRAME_ELEVATION, RoundedCornerShape(preset.cornerRadius)),
+                        ) {
+                            CanvasNode(
+                                node = workspace.mutator.current,
+                                path = emptyList(),
+                                workspace = workspace,
+                            )
+                        }
+                    }
+                }
             }
             NodeActionToolbar(workspace = workspace, canvasOrigin = canvasOrigin, chrome = chrome)
             DragGhost(workspace = workspace, canvasOrigin = canvasOrigin, chrome = chrome)
         }
+    }
+}
+
+/**
+ * Soft grounding shadow lifting the artboard off the dark backdrop. A stack of translucent
+ * rounded rects — larger and fainter outward, biased downward — fakes a blurred cast that a plain
+ * black elevation shadow can't read against the dark canvas. Drawn behind (and outside) the frame,
+ * so only the halo peeking past the opaque frame edges is visible.
+ */
+private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawArtboardShadow(cornerRadiusPx: Float) {
+    var layer = 1
+    while (layer <= ARTBOARD_SHADOW_LAYERS) {
+        val t = layer / ARTBOARD_SHADOW_LAYERS.toFloat()
+        val spread = ARTBOARD_SHADOW_SPREAD.toPx() * t
+        val dy = ARTBOARD_SHADOW_Y_OFFSET.toPx() * t
+        drawRoundRect(
+            color = Color.Black.copy(alpha = ARTBOARD_SHADOW_ALPHA * (1f - t)),
+            topLeft = Offset(-spread, -spread + dy),
+            size = Size(size.width + spread * 2f, size.height + spread * 2f),
+            cornerRadius = CornerRadius(cornerRadiusPx + spread),
+        )
+        layer++
     }
 }
 
@@ -169,16 +215,31 @@ private fun BoxScope.NodeActionToolbar(
     val index = selected.last()
     val onAccent = MaterialTheme.colorScheme.onPrimary
     val local = bounds.topLeft - canvasOrigin
+    // The pill normally floats just above the node. If placing it there would collide with the
+    // sibling directly above (tightly stacked content) or run off the top of the canvas, flip it
+    // just below the node's top-left instead so it never occludes a neighbour.
+    val nodeTopWindow = bounds.top
+    val prevSiblingBottom = if (index > 0) {
+        workspace.dropRegistry.boundsOf(selected.dropLast(1) + (index - 1))?.bottom
+    } else {
+        null
+    }
     Surface(
         color = chrome.selection,
         shape = RoundedCornerShape(TOOLBAR_CORNER_RADIUS),
+        shadowElevation = PILL_ELEVATION,
         modifier = Modifier
             .align(Alignment.TopStart)
             .offset {
-                IntOffset(
-                    x = local.x.roundToInt(),
-                    y = (local.y - TOOLBAR_OFFSET_PX).roundToInt().coerceAtLeast(0),
-                )
+                val gap = TOOLBAR_ABOVE_GAP.toPx()
+                val flipBelow = local.y < PILL_FLIP_THRESHOLD.toPx() ||
+                    (prevSiblingBottom != null && prevSiblingBottom > nodeTopWindow - gap)
+                val y = if (flipBelow) {
+                    local.y + PILL_BELOW_INSET.toPx()
+                } else {
+                    (local.y - gap).coerceAtLeast(0f)
+                }
+                IntOffset(x = local.x.roundToInt(), y = y.roundToInt())
             },
     ) {
         Row(
@@ -307,13 +368,17 @@ private fun BoxScope.DragGhost(
 private const val DROP_FILL_ALPHA = 0.08f
 private const val DROP_LINE_STROKE_PX = 2f
 private const val DROP_LINE_DOT_RADIUS_PX = 3f
-private const val DOT_GRID_ALPHA = 0.7f
+private const val DOT_GRID_ALPHA = 0.5f
 private val DOT_SPACING = 24.dp
 private val DOT_RADIUS = 1.dp
 private val DEVICE_CONTENT_PADDING = 8.dp
 private val CANVAS_H_PADDING = 28.dp
-private val CANVAS_V_PADDING = 20.dp
-private val FRAME_ELEVATION = 18.dp
+private val CANVAS_V_PADDING = 24.dp
+private val FRAME_ELEVATION = 8.dp
+private const val ARTBOARD_SHADOW_LAYERS = 6
+private val ARTBOARD_SHADOW_SPREAD = 22.dp
+private val ARTBOARD_SHADOW_Y_OFFSET = 12.dp
+private const val ARTBOARD_SHADOW_ALPHA = 0.12f
 private val GHOST_CORNER_RADIUS = 3.dp
 private val TOOLBAR_CORNER_RADIUS = 5.dp
 private val TOOLBAR_ACTION_SIZE = 24.dp
@@ -322,6 +387,9 @@ private val TOOLBAR_DIVIDER_WIDTH = 1.dp
 private val TOOLBAR_DIVIDER_HEIGHT = 14.dp
 private const val TOOLBAR_DIVIDER_ALPHA = 0.35f
 private const val DISABLED_ACTION_ALPHA = 0.35f
-private const val TOOLBAR_OFFSET_PX = 30
+private val TOOLBAR_ABOVE_GAP = 30.dp
+private val PILL_FLIP_THRESHOLD = 40.dp
+private val PILL_BELOW_INSET = 6.dp
+private val PILL_ELEVATION = 4.dp
 private const val GHOST_POINTER_OFFSET_PX = 12
 private const val GHOST_ALPHA = 0.9f
